@@ -67,14 +67,20 @@ function Section({
 export function InvitationInfoForm({
   invitation,
   maxMb = 5,
+  showSubmit = true,
+  onSuccess,
 }: {
   invitation: Invitation;
   maxMb?: number;
+  showSubmit?: boolean;
+  onSuccess?: () => void;
 }) {
   return (
     <ActionForm
       action={updateInvitation}
       submitLabel="Simpan perubahan"
+      showSubmit={showSubmit}
+      onSuccess={onSuccess}
       className="space-y-5"
     >
       <input type="hidden" name="id" value={invitation.id} />
