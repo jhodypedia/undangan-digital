@@ -928,20 +928,21 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, transparent 40%),
       linear-gradient(
         180deg,
-        var(--tpl-surface, #ffffff),
-        color-mix(in srgb, var(--tpl-surface, #ffffff) 93%, transparent)
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 82%, transparent),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 62%, transparent)
       );
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--tpl-accent, #c9a24b) 20%, transparent),
       0 40px 80px -54px color-mix(in srgb, var(--tpl-text, #0f1f18) 80%, transparent);
+    backdrop-filter: blur(12px) saturate(1.1);
   }
   [data-bg="dark"] .inv-plate {
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, transparent 42%),
       linear-gradient(
         180deg,
-        color-mix(in srgb, var(--tpl-surface, #ffffff) 88%, transparent),
-        color-mix(in srgb, var(--tpl-surface, #ffffff) 74%, transparent)
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 72%, transparent),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 55%, transparent)
       );
     backdrop-filter: blur(14px) saturate(1.15);
     border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 55%, transparent);
@@ -953,7 +954,7 @@
     border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 28%, transparent);
   }
   [data-bg="dark"] .inv-plate-soft {
-    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 70%, transparent);
+    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 55%, transparent);
     backdrop-filter: blur(10px) saturate(1.1);
     border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 35%, transparent);
   }
@@ -962,15 +963,15 @@
       linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, transparent 40%),
       linear-gradient(
         180deg,
-        var(--tpl-surface, #ffffff),
-        color-mix(in srgb, var(--tpl-surface, #ffffff) 95%, transparent)
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 78%, transparent),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 62%, transparent)
       );
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--tpl-text, #0f1f18) 8%, transparent),
       0 24px 48px -36px color-mix(in srgb, var(--tpl-text, #0f1f18) 45%, transparent);
   }
   [data-bg="light"] .inv-plate-soft {
-    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 92%, transparent);
+    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 72%, transparent);
     border-color: color-mix(in srgb, var(--tpl-text, #0f1f18) 12%, transparent);
   }
   .inv-plate::after {
@@ -1038,7 +1039,8 @@
     border-radius: 1.25rem;
     border: 1px solid
       color-mix(in srgb, var(--tpl-accent, #c9a24b) 28%, transparent);
-    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 82%, transparent);
+    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 62%, transparent);
+    backdrop-filter: blur(8px);
   }
   .inv-photo-frame {
     border: 2px solid

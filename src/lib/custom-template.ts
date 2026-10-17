@@ -131,9 +131,10 @@ export const CUSTOM_BASE_CSS = `
   position: relative;
   background: linear-gradient(
     180deg,
-    var(--surface),
-    color-mix(in srgb, var(--surface) 93%, transparent)
+    color-mix(in srgb, var(--surface) 82%, transparent),
+    color-mix(in srgb, var(--surface) 62%, transparent)
   );
+  backdrop-filter: blur(12px) saturate(1.1);
   border: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
   border-radius: 1.75rem;
   padding: 1.6rem 1.75rem;
@@ -182,7 +183,8 @@ export const CUSTOM_BASE_CSS = `
 .cv-soft {
   border-radius: 1.25rem;
   border: 1px solid color-mix(in srgb, var(--accent) 28%, transparent);
-  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  background: color-mix(in srgb, var(--surface) 62%, transparent);
+  backdrop-filter: blur(8px);
   padding: 1rem 1.1rem;
 }
 .cv-quote {

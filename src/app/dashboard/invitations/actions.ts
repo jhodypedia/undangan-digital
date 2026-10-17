@@ -254,6 +254,7 @@ export async function saveEvent(
     await db.insert(events).values(values);
   }
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
   return { success: "Acara disimpan." };
 }
 
@@ -264,6 +265,7 @@ export async function deleteEvent(formData: FormData): Promise<void> {
   if (!owned) return;
   await db.delete(events).where(eq(events.id, Number(formData.get("id"))));
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
 }
 
 export async function saveStory(
@@ -293,6 +295,7 @@ export async function saveStory(
     await db.insert(stories).values(values);
   }
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
   return { success: "Cerita disimpan." };
 }
 
@@ -309,6 +312,7 @@ export async function deleteStory(formData: FormData): Promise<void> {
   await db.delete(stories).where(and(eq(stories.id, id), eq(stories.invitationId, invitationId)));
   await removeUploadedFile(row?.url);
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
 }
 
 export async function addGallery(
@@ -350,6 +354,7 @@ export async function addGallery(
     })),
   );
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
   return {
     success:
       urls.length > 1
@@ -396,6 +401,7 @@ export async function saveAlbum(
   }
 
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
   return { success: id ? "Album diperbarui." : "Album ditambahkan." };
 }
 
@@ -414,6 +420,7 @@ export async function deleteAlbum(formData: FormData): Promise<void> {
     .where(and(eq(albums.id, id), eq(albums.invitationId, invitationId)));
   await removeUploadedFile(row?.url);
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
 }
 
 export async function deleteGallery(formData: FormData): Promise<void> {
@@ -431,6 +438,7 @@ export async function deleteGallery(formData: FormData): Promise<void> {
     .where(and(eq(galleries.id, id), eq(galleries.invitationId, invitationId)));
   await removeUploadedFile(row?.url);
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
 }
 
 export async function saveGift(
@@ -461,6 +469,7 @@ export async function saveGift(
     await db.insert(gifts).values(values);
   }
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
   return { success: "Info hadiah disimpan." };
 }
 
@@ -471,6 +480,7 @@ export async function deleteGift(formData: FormData): Promise<void> {
   if (!owned) return;
   await db.delete(gifts).where(eq(gifts.id, Number(formData.get("id"))));
   revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
 }
 
 export async function uploadImageAction(
