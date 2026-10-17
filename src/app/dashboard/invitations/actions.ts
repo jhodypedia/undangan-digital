@@ -18,7 +18,13 @@ import type { FormState } from "@/lib/form-state";
 import { slugify } from "@/lib/format";
 import { SITE_SETTINGS_KEYS } from "@/lib/constants";
 import { getSettings } from "@/lib/settings";
-import { generateImage, generateTemplate, type GeneratedTemplate } from "@/lib/ai";
+import {
+  generateImage,
+  generateTemplate,
+  isAiConfigured,
+  AI_MAINTENANCE_MESSAGE,
+  type GeneratedTemplate,
+} from "@/lib/ai";
 import { normalizeTemplateConfig } from "@/lib/template-config";
 import { purgeInvitationMedia } from "@/lib/media-cleanup";
 import { removeUploadedFile, removeUploadedFiles, saveImage } from "@/lib/upload";
@@ -532,6 +538,8 @@ export async function generateBackgroundAction(
   const owned = await ownedInvitation(invitationId, user.id);
   if (!owned) return { error: "Undangan tidak ditemukan." };
 
+  if (!(await isAiConfigured())) return { error: AI_MAINTENANCE_MESSAGE };
+
   const value = prompt.trim();
   if (!value) return { error: "Tulis deskripsi latar terlebih dahulu." };
 
@@ -571,6 +579,8 @@ export async function previewInvitationLookAction(
   }
   const owned = await ownedInvitation(invitationId, user.id);
   if (!owned) return { error: "Undangan tidak ditemukan." };
+
+  if (!(await isAiConfigured())) return { error: AI_MAINTENANCE_MESSAGE };
 
   const value = prompt.trim();
   if (!value) return { error: "Tulis deskripsi tampilan terlebih dahulu." };

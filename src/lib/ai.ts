@@ -1,5 +1,8 @@
 import { SITE_SETTINGS_KEYS } from "@/lib/constants";
 import { getSettings } from "@/lib/settings";
+
+export const AI_MAINTENANCE_MESSAGE =
+  "Fitur AI sedang dalam pemeliharaan. Silakan coba lagi nanti.";
 import {
   normalizeTemplateConfig,
   type TemplateConfig,
@@ -157,6 +160,14 @@ export function fallbackTemplate(prompt: string): GeneratedTemplate {
   };
 }
 
+export async function isAiConfigured(): Promise<boolean> {
+  const settings = await getSettings();
+  const enabled = settings[SITE_SETTINGS_KEYS.aiEnabled] === "1";
+  const apiKey = settings[SITE_SETTINGS_KEYS.aiApiKey];
+  const provider = settings[SITE_SETTINGS_KEYS.aiProvider];
+  return Boolean(enabled && apiKey && provider && provider !== "none");
+}
+
 export async function generateTemplate(
   prompt: string,
 ): Promise<GeneratedTemplate> {
@@ -261,11 +272,7 @@ export async function generateImage(
   const model = settings[SITE_SETTINGS_KEYS.aiImageModel] || "gpt-image-1";
 
   if (!enabled || !apiKey || provider === "none") {
-    return {
-      ok: false,
-      error:
-        "Fitur AI belum dikonfigurasi. Hubungi admin untuk mengisi API key dan mengaktifkan AI.",
-    };
+    return { ok: false, error: AI_MAINTENANCE_MESSAGE };
   }
 
   try {
