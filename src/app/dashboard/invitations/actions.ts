@@ -45,18 +45,22 @@ async function ownedInvitation(invitationId: number, userId: number) {
 
 async function uniqueSlug(base: string, excludeId?: number) {
   const root = slugify(base) || "undangan";
-  let candidate = root;
-  let counter = 1;
-  while (true) {
+  // Coba slug bersih dulu (readable). Jika sudah dipakai, tambahkan sufiks
+  // acak (UUID pendek) agar unik dan tidak nabrak, termasuk race condition.
+  const candidates = [root];
+  for (let i = 0; i < 5; i++) {
+    candidates.push(`${root}-${crypto.randomUUID().slice(0, 6)}`);
+  }
+  for (const candidate of candidates) {
     const [existing] = await db
       .select({ id: invitations.id })
       .from(invitations)
       .where(eq(invitations.slug, candidate))
       .limit(1);
     if (!existing || existing.id === excludeId) return candidate;
-    counter += 1;
-    candidate = `${root}-${counter}`;
   }
+  // Fallback terakhir: UUID penuh
+  return `${root}-${crypto.randomUUID()}`;
 }
 
 const str = (formData: FormData, key: string) => {
