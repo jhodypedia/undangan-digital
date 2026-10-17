@@ -1,0 +1,808 @@
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import { CalendarDays, Gift, Heart, MapPin, Quote, Send } from "lucide-react";
+
+import { CopyButton } from "@/components/invitation/copy-button";
+import { Countdown } from "@/components/invitation/countdown";
+import { CustomInvitation } from "@/components/invitation/custom-invitation";
+import { GalleryViewer } from "@/components/invitation/gallery-viewer";
+import { InvitationScreen } from "@/components/invitation/invitation-screen";
+import { Parallax } from "@/components/invitation/parallax";
+import { Reveal } from "@/components/invitation/reveal";
+import { RsvpForm } from "@/components/invitation/rsvp-form";
+import { WishForm } from "@/components/invitation/wish-form";
+import { SITE_SETTINGS_KEYS, GIFT_TYPE_LABELS } from "@/lib/constants";
+import { getEffectiveRole } from "@/lib/auth";
+import type { CustomTemplateData } from "@/lib/custom-template";
+import {
+  combineWIBDateAndTime,
+  formatDateID,
+  formatTimeRangeWIB,
+  toWIBDateInput,
+} from "@/lib/time";
+import { getGuestByCode, getPublicInvitation } from "@/lib/queries";
+import { getSettings } from "@/lib/settings";
+import {
+  googleMapsDirectionsUrl,
+  googleMapsEmbedUrl,
+  mapsQuery,
+  resolveLatLng,
+} from "@/lib/maps";
+import { normalizeTemplateConfig } from "@/lib/template-config";
+
+function SectionTitle({
+  kicker,
+  title,
+  fontDisplay,
+}: {
+  kicker?: string;
+  title: string;
+  fontDisplay?: string;
+}) {
+  return (
+    <div className="inv-section-title text-center">
+      {kicker ? (
+        <span
+          className="text-[11px] uppercase tracking-[0.35em]"
+          style={{ color: "var(--tpl-accent)" }}
+        >
+          {kicker}
+        </span>
+      ) : null}
+      <span aria-hidden className="inv-ornament py-1">
+        <span
+          className="size-1.5 rotate-45 rounded-[1px]"
+          style={{ background: "var(--tpl-accent)" }}
+        />
+      </span>
+      <h2
+        className="inv-title-shine font-display text-2xl sm:text-3xl"
+        style={{ fontFamily: `'${fontDisplay}', serif` }}
+      >
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+export default async function PublicInvitationPage(
+  props: PageProps<"/u/[slug]">,
+) {
+  const { slug } = await props.params;
+  const search = await props.searchParams;
+  const codeParam = typeof search.to === "string" ? search.to : undefined;
+
+  const data = await getPublicInvitation(slug);
+  if (!data) notFound();
+
+  const {
+    invitation,
+    template,
+    owner,
+    events,
+    stories,
+    galleries,
+    gifts,
+    wishes,
+    albums,
+  } = data;
+
+  const settings = await getSettings();
+  const config = normalizeTemplateConfig(
+    invitation.customConfig ?? template?.config,
+  );
+  const colors = {
+    ...config.colors,
+    primary: invitation.themeColor || config.colors.primary,
+    accent: invitation.accentColor || config.colors.accent,
+  };
+
+  const guest = codeParam ? await getGuestByCode(codeParam) : null;
+  const validGuest =
+    guest && guest.invitationId === invitation.id ? guest : null;
+
+  const ownerRole = getEffectiveRole(owner);
+  const showWatermark =
+    ownerRole === "free" &&
+    settings[SITE_SETTINGS_KEYS.watermarkEnabled] === "true";
+  const brand =
+    settings[SITE_SETTINGS_KEYS.invitationBrandText] ||
+    settings[SITE_SETTINGS_KEYS.siteName] ||
+    "UndanganKita";
+
+  const mapsApiKey = settings[SITE_SETTINGS_KEYS.mapsApiKey] || "";
+  const mainCoords = resolveLatLng(
+    invitation.latitude,
+    invitation.longitude,
+    invitation.mapsUrl,
+  );
+  const mainQuery = mapsQuery([invitation.locationName, invitation.address]);
+  const mainEmbedUrl = googleMapsEmbedUrl({
+    apiKey: mapsApiKey,
+    lat: mainCoords?.lat,
+    lng: mainCoords?.lng,
+    query: mainQuery,
+  });
+  const mainDirectionsUrl =
+    googleMapsDirectionsUrl({
+      lat: mainCoords?.lat,
+      lng: mainCoords?.lng,
+      query: mainQuery,
+    }) ?? invitation.mapsUrl;
+
+  const coupleTitle =
+    invitation.brideName && invitation.groomName
+      ? `${invitation.brideName} & ${invitation.groomName}`
+      : invitation.brideName || invitation.groomName || invitation.title;
+
+  const dateLabel = invitation.eventDate
+    ? formatDateID(invitation.eventDate)
+    : "Segera";
+
+  const fontFamilies = [config.fontDisplay, config.fontBody]
+    .filter(Boolean)
+    .map((family) => family.replace(/\s+/g, "+"))
+    .join("&family=");
+
+  const flatGallery = galleries.filter((photo) => !photo.albumId);
+  const sections = config.sections;
+  const hasCustom = Boolean(config.customHtml?.trim());
+
+  const customData: CustomTemplateData = {
+    couple: coupleTitle,
+    groom: invitation.groomName ?? "",
+    groomFull: invitation.groomFullName ?? invitation.groomName ?? "",
+    bride: invitation.brideName ?? "",
+    brideFull: invitation.brideFullName ?? invitation.brideName ?? "",
+    date: dateLabel,
+    isoDate: invitation.eventDate ? invitation.eventDate.toISOString() : "",
+    quote: invitation.quote ?? "",
+    quoteSource: invitation.quoteSource ?? "",
+    greeting: invitation.greeting ?? "",
+    closing: invitation.closing ?? "",
+    coverPhoto: invitation.coverPhoto ?? invitation.coverImage ?? "",
+    colors,
+    events: events.map((event) => ({
+      name: event.name,
+      date: formatDateID(event.date),
+      time: event.startTime
+        ? formatTimeRangeWIB(
+            combineWIBDateAndTime(
+              toWIBDateInput(event.date),
+              event.startTime,
+            ),
+            event.endTime
+              ? combineWIBDateAndTime(
+                  toWIBDateInput(event.date),
+                  event.endTime,
+                )
+              : null,
+          )
+        : "",
+      venue: event.venue ?? "",
+      address: event.address ?? "",
+      mapsUrl: event.mapsUrl,
+    })),
+    gallery: galleries.map((photo) => ({
+      imageUrl: photo.imageUrl,
+      caption: photo.caption,
+    })),
+  };
+
+  const navItems = hasCustom
+    ? [
+        { id: "top", label: "Awal" },
+        { id: "rsvp", label: "RSVP" },
+        { id: "wishes", label: "Ucapan" },
+      ]
+    : [
+        { id: "couple", label: "Mempelai", enabled: sections.includes("couple") },
+        {
+          id: "countdown",
+          label: "Hitung Hari",
+          enabled: sections.includes("countdown") && Boolean(invitation.eventDate),
+        },
+        {
+          id: "events",
+          label: "Acara",
+          enabled: sections.includes("events") && events.length > 0,
+        },
+        {
+          id: "gallery",
+          label: "Galeri",
+          enabled:
+            (sections.includes("gallery") && flatGallery.length > 0) ||
+            (sections.includes("album") && albums.length > 0),
+        },
+        {
+          id: "gift",
+          label: "Hadiah",
+          enabled: sections.includes("gift") && gifts.length > 0,
+        },
+        { id: "rsvp", label: "RSVP", enabled: sections.includes("rsvp") },
+        { id: "wishes", label: "Ucapan", enabled: sections.includes("wishes") },
+      ]
+        .filter((item) => item.enabled)
+        .map(({ id, label }) => ({ id, label }));
+
+  const plate = "inv-plate p-6 sm:p-7";
+
+  const interactiveSections = (
+    <>
+      {sections.includes("rsvp") ? (
+        <Reveal>
+          <section id="rsvp" className="space-y-6">
+            <SectionTitle
+              kicker="Mohon konfirmasi"
+              title="Konfirmasi Kehadiran"
+              fontDisplay={config.fontDisplay}
+            />
+            <div className={plate}>
+              <RsvpForm
+                invitationId={invitation.id}
+                guestId={validGuest?.id}
+                defaultName={validGuest?.name}
+              />
+            </div>
+          </section>
+        </Reveal>
+      ) : null}
+
+      {sections.includes("wishes") ? (
+        <Reveal>
+          <section id="wishes" className="space-y-6">
+            <SectionTitle
+              kicker="Doa & harapan"
+              title="Ucapan"
+              fontDisplay={config.fontDisplay}
+            />
+            <div className={plate}>
+              <WishForm
+                invitationId={invitation.id}
+                guestId={validGuest?.id}
+                defaultName={validGuest?.name}
+              />
+            </div>
+            <div className="space-y-3">
+              {wishes.map((wish) => (
+                <div key={wish.id} className="inv-plate-soft p-4">
+                  <p className="flex items-center gap-2 text-sm font-medium">
+                    <Heart className="size-3.5" style={{ color: colors.accent }} />
+                    {wish.name}
+                  </p>
+                  <p className="mt-1 text-sm opacity-80">{wish.message}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        </Reveal>
+      ) : null}
+    </>
+  );
+
+  return (
+    <>
+      <link
+        rel="stylesheet"
+        href={`https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`}
+      />
+      <div
+        className="font-body"
+        style={
+          {
+            "--tpl-primary": colors.primary,
+            "--tpl-accent": colors.accent,
+            "--tpl-background": colors.background,
+            "--tpl-surface": colors.surface,
+            "--tpl-text": colors.text,
+            fontFamily: `'${config.fontBody}', ui-sans-serif, system-ui, sans-serif`,
+          } as React.CSSProperties
+        }
+      >
+        <InvitationScreen
+          slug={slug}
+          guestCode={validGuest?.code}
+          guestName={validGuest?.name}
+          coverImage={invitation.coverImage}
+          coverPhoto={invitation.coverPhoto}
+          title={coupleTitle}
+          subtitle="Undangan Pernikahan"
+          dateLabel={dateLabel}
+          musicUrl={invitation.musicUrl}
+          primary={colors.primary}
+          accent={colors.accent}
+          brand={brand}
+          backgroundImage={invitation.backgroundImage}
+          backgroundOverlay={invitation.backgroundOverlay}
+          backgroundBlur={invitation.backgroundBlur}
+          watermark={showWatermark}
+          watermarkText={settings[SITE_SETTINGS_KEYS.watermarkText] || brand}
+          navItems={navItems}
+        >
+          <div className="space-y-14">
+            {hasCustom ? (
+              <div id="top">
+                <CustomInvitation config={config} data={customData} />
+              </div>
+            ) : (
+              <>
+                {sections.includes("quote") && invitation.quote ? (
+                  <Reveal>
+                    <section className="inv-plate p-7 text-center sm:p-8">
+                      <Quote
+                        aria-hidden
+                        className="mx-auto size-8 opacity-25"
+                        style={{ color: colors.accent }}
+                      />
+                      <p
+                        className="mx-auto mt-5 max-w-2xl font-display text-xl leading-relaxed text-balance sm:text-2xl"
+                        style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+                      >
+                        “{invitation.quote}”
+                      </p>
+                      {invitation.quoteSource ? (
+                        <span className="inv-ornament mt-5 block">
+                          <span
+                            className="text-xs tracking-[0.3em] uppercase"
+                            style={{ color: colors.accent }}
+                          >
+                            {invitation.quoteSource}
+                          </span>
+                        </span>
+                      ) : null}
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("couple") ? (
+                  <Reveal>
+                    <section id="couple" className="inv-plate space-y-8 p-7 text-center sm:p-8">
+                      <SectionTitle
+                        kicker="Dengan memohon rahmat Allah"
+                        title="Mempelai"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      {invitation.greeting ? (
+                        <p className="mx-auto max-w-xl text-sm leading-relaxed opacity-80">
+                          {invitation.greeting}
+                        </p>
+                      ) : null}
+                      <div className="relative grid gap-10 sm:grid-cols-2">
+                        <span
+                          aria-hidden
+                          className="pointer-events-none absolute left-1/2 top-24 hidden -translate-x-1/2 font-display text-5xl opacity-30 sm:block"
+                          style={{ color: colors.accent }}
+                        >
+                          &amp;
+                        </span>
+                        {[invitation.brideName, invitation.groomName].map(
+                          (name, index) =>
+                            name ? (
+                              <div
+                                key={index}
+                                className="group relative flex flex-col items-center"
+                              >
+                                <Parallax
+                                  speed={index === 0 ? 0.05 : 0.09}
+                                  className="inline-block"
+                                >
+                                  <div className="relative grid place-items-center">
+                                    <span
+                                      aria-hidden
+                                      className="inv-spin-ring pointer-events-none absolute -inset-3 rounded-full opacity-0 transition-opacity duration-700 group-hover:opacity-70"
+                                      style={{
+                                        background: `conic-gradient(from 0deg, transparent 0deg, ${colors.accent} 90deg, transparent 210deg)`,
+                                        filter: "blur(1px)",
+                                      }}
+                                    />
+                                    {index === 0 && invitation.bridePhoto ? (
+                                      <Image
+                                        src={invitation.bridePhoto}
+                                        alt={invitation.brideName ?? "Mempelai"}
+                                        width={260}
+                                        height={340}
+                                        unoptimized
+                                        className="inv-arch card-lift size-40 object-cover sm:size-44"
+                                      />
+                                    ) : index === 1 && invitation.groomPhoto ? (
+                                      <Image
+                                        src={invitation.groomPhoto}
+                                        alt={invitation.groomName ?? "Mempelai"}
+                                        width={260}
+                                        height={340}
+                                        unoptimized
+                                        className="inv-arch card-lift size-40 object-cover sm:size-44"
+                                      />
+                                    ) : (
+                                      <div
+                                        className="inv-arch grid size-40 place-items-center sm:size-44"
+                                        style={{
+                                          background: `color-mix(in srgb, ${colors.accent} 18%, var(--tpl-surface))`,
+                                        }}
+                                      >
+                                        <span
+                                          className="font-display text-3xl"
+                                          style={{ color: colors.accent }}
+                                        >
+                                          {name.charAt(0)}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </Parallax>
+                                <span className="inv-ornament mt-6 w-full max-w-[11rem]">
+                                  <Heart
+                                    className="inv-heartbeat size-3.5"
+                                    style={{ color: colors.accent }}
+                                  />
+                                </span>
+                                <h3
+                                  className="inv-title-shine mt-1 max-w-full font-display text-2xl text-balance break-words sm:text-3xl"
+                                  style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+                                >
+                                  {index === 0
+                                    ? invitation.brideFullName ?? invitation.brideName
+                                    : invitation.groomFullName ?? invitation.groomName}
+                                </h3>
+                                <p className="mt-2 text-sm opacity-70">
+                                  {index === 0
+                                    ? invitation.brideParents ?? invitation.brideOrder
+                                    : invitation.groomParents ?? invitation.groomOrder}
+                                </p>
+                                {index === 0 && invitation.brideInstagram ? (
+                                  <a
+                                    href={`https://instagram.com/${invitation.brideInstagram}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-1 text-sm"
+                                    style={{ color: colors.accent }}
+                                  >
+                                    @{invitation.brideInstagram}
+                                  </a>
+                                ) : null}
+                                {index === 1 && invitation.groomInstagram ? (
+                                  <a
+                                    href={`https://instagram.com/${invitation.groomInstagram}`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="mt-1 text-sm"
+                                    style={{ color: colors.accent }}
+                                  >
+                                    @{invitation.groomInstagram}
+                                  </a>
+                                ) : null}
+                              </div>
+                            ) : null,
+                        )}
+                      </div>
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("countdown") && invitation.eventDate ? (
+                  <Reveal>
+                    <section
+                      id="countdown"
+                      className="inv-plate space-y-6 p-7 text-center sm:p-8"
+                    >
+                      <SectionTitle
+                        kicker="Menuju hari bahagia"
+                        title="Hitung Hari"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      <Countdown target={invitation.eventDate.toISOString()} />
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("events") && events.length > 0 ? (
+                  <Reveal>
+                    <section id="events" className="inv-plate space-y-6 p-6 sm:p-7">
+                      <SectionTitle
+                        kicker="Rangkaian acara"
+                        title="Waktu & Tempat"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        {events.map((event) => {
+                          const coords = resolveLatLng(
+                            event.latitude,
+                            event.longitude,
+                            event.mapsUrl,
+                          );
+                          const query = mapsQuery([event.venue, event.address]);
+                          const embedUrl = googleMapsEmbedUrl({
+                            apiKey: mapsApiKey,
+                            lat: coords?.lat,
+                            lng: coords?.lng,
+                            query,
+                          });
+                          const directionsUrl =
+                            googleMapsDirectionsUrl({
+                              lat: coords?.lat,
+                              lng: coords?.lng,
+                              query,
+                            }) ?? event.mapsUrl;
+                          return (
+                            <div key={event.id} className="inv-plate-soft card-lift p-5">
+                              <p className="text-center font-display text-xl">
+                                {event.name}
+                              </p>
+                              <div
+                                className="my-3 h-px w-full"
+                                style={{
+                                  background: `color-mix(in srgb, ${colors.accent} 45%, transparent)`,
+                                }}
+                              />
+                              <p className="flex items-center gap-2 text-sm opacity-80">
+                                <CalendarDays className="size-4" style={{ color: colors.accent }} />
+                                {formatDateID(event.date)}
+                              </p>
+                              <p className="mt-1 text-sm opacity-80">
+                                {event.startTime
+                                  ? formatTimeRangeWIB(
+                                      combineWIBDateAndTime(
+                                        toWIBDateInput(event.date),
+                                        event.startTime,
+                                      ),
+                                      event.endTime
+                                        ? combineWIBDateAndTime(
+                                            toWIBDateInput(event.date),
+                                            event.endTime,
+                                          )
+                                        : null,
+                                    )
+                                  : null}
+                              </p>
+                              <p className="mt-2 flex items-start gap-2 text-sm opacity-80">
+                                <MapPin className="mt-0.5 size-4" style={{ color: colors.accent }} />
+                                <span>
+                                  {event.venue}
+                                  {event.address ? `, ${event.address}` : ""}
+                                </span>
+                              </p>
+                              {embedUrl ? (
+                                <iframe
+                                  src={embedUrl}
+                                  title={`Peta ${event.name}`}
+                                  loading="lazy"
+                                  allowFullScreen
+                                  referrerPolicy="no-referrer-when-downgrade"
+                                  className="mt-4 h-52 w-full rounded-2xl border"
+                                  style={{
+                                    borderColor: `color-mix(in srgb, ${colors.text} 12%, transparent)`,
+                                  }}
+                                />
+                              ) : null}
+                              {directionsUrl ? (
+                                <a
+                                  href={directionsUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="mt-4 inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-medium"
+                                  style={{ background: colors.accent, color: colors.primary }}
+                                >
+                                  <MapPin className="size-3.5" /> Buka di Google Maps
+                                </a>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {mainEmbedUrl && !events.some((event) =>
+                        resolveLatLng(event.latitude, event.longitude, event.mapsUrl) ||
+                        mapsQuery([event.venue, event.address]),
+                      ) ? (
+                        <div className="inv-plate-soft card-lift p-5">
+                          <p className="flex items-center gap-2 font-display text-xl">
+                            <MapPin className="size-5" style={{ color: colors.accent }} />
+                            {invitation.locationName ?? "Lokasi Acara"}
+                          </p>
+                          {invitation.address ? (
+                            <p className="mt-2 text-sm opacity-80">{invitation.address}</p>
+                          ) : null}
+                          <iframe
+                            src={mainEmbedUrl}
+                            title="Peta lokasi acara"
+                            loading="lazy"
+                            allowFullScreen
+                            referrerPolicy="no-referrer-when-downgrade"
+                            className="mt-4 h-64 w-full rounded-2xl border"
+                            style={{
+                              borderColor: `color-mix(in srgb, ${colors.text} 12%, transparent)`,
+                            }}
+                          />
+                          {mainDirectionsUrl ? (
+                            <a
+                              href={mainDirectionsUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="mt-4 inline-flex items-center gap-1 rounded-full px-4 py-2 text-xs font-medium"
+                              style={{ background: colors.accent, color: colors.primary }}
+                            >
+                              <MapPin className="size-3.5" /> Buka di Google Maps
+                            </a>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("story") && stories.length > 0 ? (
+                  <Reveal>
+                    <section className="inv-plate space-y-6 p-7 sm:p-8">
+                      <SectionTitle
+                        kicker="Perjalanan kami"
+                        title="Cerita Cinta"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      <div
+                        className="relative ml-2 space-y-8 border-l pl-7"
+                        style={{
+                          borderColor: `color-mix(in srgb, ${colors.accent} 40%, transparent)`,
+                        }}
+                      >
+                        {stories.map((story) => (
+                          <div key={story.id} className="relative">
+                            <span
+                              className="absolute top-1.5 -left-[36px] size-3 rounded-full"
+                              style={{
+                                background: colors.accent,
+                                boxShadow: `0 0 0 4px color-mix(in srgb, ${colors.accent} 18%, transparent)`,
+                              }}
+                            />
+                            <p
+                              className="text-xs tracking-[0.25em] uppercase"
+                              style={{ color: colors.accent }}
+                            >
+                              {formatDateID(story.storyDate)}
+                            </p>
+                            <p className="mt-1 font-display text-lg">{story.title}</p>
+                            <p className="mt-1 text-sm leading-relaxed opacity-80">
+                              {story.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("gallery") && flatGallery.length > 0 ? (
+                  <Reveal>
+                    <section id="gallery" className="inv-plate space-y-6 p-6 sm:p-7">
+                      <SectionTitle
+                        kicker="Momen kebahagiaan"
+                        title="Galeri"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      <GalleryViewer
+                        photos={flatGallery.map((photo) => ({
+                          id: photo.id,
+                          imageUrl: photo.imageUrl,
+                          caption: photo.caption,
+                        }))}
+                      />
+                    </section>
+                  </Reveal>
+                ) : null}
+
+                {sections.includes("album") && albums.length > 0
+                  ? albums.map((album) => {
+                      const photos = galleries.filter(
+                        (photo) => photo.albumId === album.id,
+                      );
+                      if (photos.length === 0) return null;
+                      return (
+                        <Reveal key={album.id}>
+                          <section className="inv-plate space-y-6 p-6 sm:p-7">
+                            <SectionTitle
+                              kicker="Album"
+                              title={album.name}
+                              fontDisplay={config.fontDisplay}
+                            />
+                            {album.description ? (
+                              <p className="-mt-3 text-center text-sm opacity-70">
+                                {album.description}
+                              </p>
+                            ) : null}
+                            <GalleryViewer
+                              layout="album"
+                              photos={photos.map((photo) => ({
+                                id: photo.id,
+                                imageUrl: photo.imageUrl,
+                                caption: photo.caption,
+                              }))}
+                            />
+                          </section>
+                        </Reveal>
+                      );
+                    })
+                  : null}
+
+                {sections.includes("gift") && gifts.length > 0 ? (
+                  <Reveal>
+                    <section id="gift" className="inv-plate space-y-6 p-6 sm:p-7">
+                      <SectionTitle
+                        kicker="Tanda kasih"
+                        title="Kirim Hadiah"
+                        fontDisplay={config.fontDisplay}
+                      />
+                      <div className="grid gap-5 sm:grid-cols-2">
+                        {gifts.map((gift) => (
+                          <div
+                            key={gift.id}
+                            className="inv-plate-soft card-lift p-5"
+                          >
+                            <span
+                              className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-medium tracking-wide uppercase"
+                              style={{
+                                background: `color-mix(in srgb, ${colors.accent} 18%, transparent)`,
+                                color: colors.accent,
+                              }}
+                            >
+                              <Gift className="size-3.5" />
+                              {GIFT_TYPE_LABELS[gift.type]}
+                            </span>
+                            <p className="mt-3 font-display text-lg">
+                              {gift.provider ?? gift.accountName}
+                            </p>
+                            {gift.accountNumber ? (
+                              <div className="mt-2 flex items-center gap-2">
+                                <span className="font-mono text-sm">
+                                  {gift.accountNumber}
+                                </span>
+                                <CopyButton value={gift.accountNumber} />
+                              </div>
+                            ) : null}
+                            {gift.address ? (
+                              <div className="mt-2 flex items-start gap-2">
+                                <span className="text-sm opacity-80">{gift.address}</span>
+                                <CopyButton value={gift.address} />
+                              </div>
+                            ) : null}
+                            {gift.accountName && gift.accountNumber ? (
+                              <p className="mt-1 text-sm opacity-70">
+                                a.n. {gift.accountName}
+                              </p>
+                            ) : null}
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </Reveal>
+                ) : null}
+              </>
+            )}
+
+            {interactiveSections}
+
+            {invitation.closing ? (
+              <Reveal>
+                <section className="inv-plate p-7 text-center sm:p-8">
+                  <span className="inv-ornament">
+                    <Send className="size-5" style={{ color: colors.accent }} />
+                  </span>
+                  <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed opacity-80">
+                    {invitation.closing}
+                  </p>
+                </section>
+              </Reveal>
+            ) : null}
+
+            <footer className="space-y-2 pt-4 text-center text-xs opacity-70">
+              <span className="inv-ornament" />
+              <p className="font-display text-sm text-balance break-words">{coupleTitle}</p>
+              <p>
+                Dibuat dengan{" "}
+                <span style={{ color: colors.accent }}>{brand}</span>
+              </p>
+            </footer>
+          </div>
+        </InvitationScreen>
+      </div>
+    </>
+  );
+}
