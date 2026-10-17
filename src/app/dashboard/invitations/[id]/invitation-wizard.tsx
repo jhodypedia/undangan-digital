@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import {
@@ -48,6 +48,11 @@ export function InvitationWizard({
   const { invitation, events, stories, galleries, gifts, albums } = detail;
   const [step, setStep] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    containerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [step]);
 
   const steps = [
     { title: "Info & mempelai", short: "Info" },
