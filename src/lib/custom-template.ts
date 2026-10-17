@@ -169,10 +169,10 @@ export const CUSTOM_BASE_CSS = `
     linear-gradient(var(--cv-frame), var(--cv-frame));
   background-repeat: no-repeat;
   background-size:
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px,
-    14px 2px, 2px 14px;
+    18px 2.5px, 2.5px 18px,
+    18px 2.5px, 2.5px 18px,
+    18px 2.5px, 2.5px 18px,
+    18px 2.5px, 2.5px 18px;
   background-position:
     left top, left top,
     right top, right top,

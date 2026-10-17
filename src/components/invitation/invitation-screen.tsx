@@ -64,6 +64,7 @@ export function InvitationScreen({
   backgroundImage,
   backgroundOverlay = 40,
   backgroundBlur = 0,
+  darkBg = false,
   watermark = false,
   watermarkText,
   navItems = [],
@@ -84,12 +85,15 @@ export function InvitationScreen({
   backgroundImage?: string | null;
   backgroundOverlay?: number;
   backgroundBlur?: number;
+  darkBg?: boolean;
   watermark?: boolean;
   watermarkText?: string;
   navItems?: { id: string; label: string }[];
   children: React.ReactNode;
 }) {
   const [phase, setPhase] = useState<"cover" | "opening" | "open">("cover");
+  const [showConfetti, setShowConfetti] = useState(false);
+  const scrollProgressRef = useRef<HTMLDivElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const timerRef = useRef<number | null>(null);
@@ -127,12 +131,32 @@ export function InvitationScreen({
     };
   }, [phase]);
 
+  useEffect(() => {
+    if (phase !== "open") return;
+    const update = () => {
+      const node = scrollProgressRef.current;
+      if (!node) return;
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      const ratio = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+      node.style.transform = `scaleX(${ratio})`;
+    };
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [phase]);
+
   const openInvitation = () => {
     if (phase !== "cover") return;
     window.scrollTo({ top: 0, behavior: "auto" });
     setPhase("opening");
     timerRef.current = window.setTimeout(() => {
       setPhase("open");
+      setShowConfetti(true);
+      window.setTimeout(() => setShowConfetti(false), 3200);
       timerRef.current = null;
     }, OPEN_DURATION);
   };
@@ -152,8 +176,72 @@ export function InvitationScreen({
   return (
     <div
       className="relative isolate min-h-svh"
+      data-bg={darkBg ? "dark" : "light"}
       style={{ background: "var(--tpl-background)", color: "var(--tpl-text)" }}
     >
+      {phase === "open" ? (
+        <>
+          <div
+            ref={scrollProgressRef}
+            className="inv-scroll-progress"
+            style={{ transform: "scaleX(0)" }}
+          />
+          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+            {Array.from({ length: 18 }).map((_, i) => {
+              const left = (i * 37 + 11) % 100;
+              const delay = (i * 1.3) % 18;
+              const size = 2 + (i % 4);
+              const duration = 16 + (i % 6);
+              return (
+                <span
+                  key={`dust-${i}`}
+                  className="inv-dust"
+                  style={{
+                    left: `${left}%`,
+                    bottom: "-20px",
+                    width: size,
+                    height: size,
+                    animationDelay: `${delay}s`,
+                    animationDuration: `${duration}s`,
+                    background:
+                      i % 3 === 0
+                        ? "var(--tpl-accent)"
+                        : "rgba(255,255,255,0.7)",
+                  }}
+                />
+              );
+            })}
+          </div>
+          {showConfetti ? (
+            <div className="pointer-events-none fixed inset-0 z-[70] overflow-hidden">
+              {Array.from({ length: 48 }).map((_, i) => {
+                const angle = (i / 48) * Math.PI * 2;
+                const dist = 120 + (i % 5) * 40;
+                const cx = Math.cos(angle) * dist;
+                const cy = Math.sin(angle) * dist - 60;
+                const colors = [
+                  "var(--tpl-accent)",
+                  "rgba(255,255,255,0.9)",
+                  "var(--tpl-primary)",
+                ];
+                return (
+                  <span
+                    key={`cf-${i}`}
+                    className="inv-confetti"
+                    style={{
+                      ["--cx" as string]: `${cx}px`,
+                      ["--cy" as string]: `${cy}px`,
+                      ["--cr" as string]: `${(i * 37) % 360}deg`,
+                      background: colors[i % colors.length],
+                      animationDelay: `${(i % 6) * 0.03}s`,
+                    }}
+                  />
+                );
+              })}
+            </div>
+          ) : null}
+        </>
+      ) : null}
       {musicUrl ? <audio ref={audioRef} src={musicUrl} loop preload="none" /> : null}
 
       {revealed ? (

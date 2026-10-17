@@ -798,6 +798,73 @@
     text-shadow: 0 1px 2px
       color-mix(in srgb, var(--tpl-text, #0f1f18) 24%, transparent);
   }
+  .inv-dust {
+    position: absolute;
+    border-radius: 999px;
+    pointer-events: none;
+    filter: blur(1px);
+    animation: uk-dust 18s linear infinite;
+  }
+  @keyframes uk-dust {
+    0% {
+      transform: translate3d(0, 0, 0);
+      opacity: 0;
+    }
+    10% {
+      opacity: 0.7;
+    }
+    90% {
+      opacity: 0.5;
+    }
+    100% {
+      transform: translate3d(20px, -120vh, 0);
+      opacity: 0;
+    }
+  }
+  .inv-confetti {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 8px;
+    height: 14px;
+    border-radius: 2px;
+    pointer-events: none;
+    animation: uk-confetti 2.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+  @keyframes uk-confetti {
+    0% {
+      transform: translate3d(0, 0, 0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translate3d(var(--cx), var(--cy), 0) rotate(var(--cr));
+      opacity: 0;
+    }
+  }
+  .inv-scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    z-index: 80;
+    background: linear-gradient(90deg, var(--tpl-accent, #c9a24b), var(--tpl-primary, #0b3d2e));
+    transform-origin: left;
+    transition: transform 0.1s linear;
+    pointer-events: none;
+  }
+  .inv-preview-scroll {
+    animation: uk-preview-scroll 24s ease-in-out infinite;
+  }
+  @keyframes uk-preview-scroll {
+    0%,
+    12% {
+      transform: translateY(0);
+    }
+    88%,
+    100% {
+      transform: translateY(calc(-1 * var(--preview-scroll, 16rem)));
+    }
+  }
   .inv-orb {
     position: absolute;
     border-radius: 999px;
@@ -852,17 +919,59 @@
   /* Signature figure-frame ("figura") for invitation panels */
   .inv-plate {
     position: relative;
+    isolation: isolate;
+    overflow: hidden;
     border-radius: 1.75rem;
     border: 2px solid
       color-mix(in srgb, var(--tpl-accent, #c9a24b) 50%, transparent);
-    background: linear-gradient(
-      180deg,
-      var(--tpl-surface, #ffffff),
-      color-mix(in srgb, var(--tpl-surface, #ffffff) 93%, transparent)
-    );
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, transparent 40%),
+      linear-gradient(
+        180deg,
+        var(--tpl-surface, #ffffff),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 93%, transparent)
+      );
     box-shadow:
       0 0 0 1px color-mix(in srgb, var(--tpl-accent, #c9a24b) 20%, transparent),
       0 40px 80px -54px color-mix(in srgb, var(--tpl-text, #0f1f18) 80%, transparent);
+  }
+  [data-bg="dark"] .inv-plate {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, transparent 42%),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 88%, transparent),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 74%, transparent)
+      );
+    backdrop-filter: blur(14px) saturate(1.15);
+    border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 55%, transparent);
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--tpl-accent, #c9a24b) 30%, transparent),
+      0 30px 60px -38px rgba(0, 0, 0, 0.65);
+  }
+  [data-bg="dark"] .inv-plate::after {
+    border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 28%, transparent);
+  }
+  [data-bg="dark"] .inv-plate-soft {
+    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 70%, transparent);
+    backdrop-filter: blur(10px) saturate(1.1);
+    border-color: color-mix(in srgb, var(--tpl-accent, #c9a24b) 35%, transparent);
+  }
+  [data-bg="light"] .inv-plate {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, transparent 40%),
+      linear-gradient(
+        180deg,
+        var(--tpl-surface, #ffffff),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 95%, transparent)
+      );
+    box-shadow:
+      0 0 0 1px color-mix(in srgb, var(--tpl-text, #0f1f18) 8%, transparent),
+      0 24px 48px -36px color-mix(in srgb, var(--tpl-text, #0f1f18) 45%, transparent);
+  }
+  [data-bg="light"] .inv-plate-soft {
+    background: color-mix(in srgb, var(--tpl-surface, #ffffff) 92%, transparent);
+    border-color: color-mix(in srgb, var(--tpl-text, #0f1f18) 12%, transparent);
   }
   .inv-plate::after {
     content: "";
@@ -914,10 +1023,10 @@
       );
     background-repeat: no-repeat;
     background-size:
-      14px 2px, 2px 14px,
-      14px 2px, 2px 14px,
-      14px 2px, 2px 14px,
-      14px 2px, 2px 14px;
+      18px 2.5px, 2.5px 18px,
+      18px 2.5px, 2.5px 18px,
+      18px 2.5px, 2.5px 18px,
+      18px 2.5px, 2.5px 18px;
     background-position:
       left top, left top,
       right top, right top,

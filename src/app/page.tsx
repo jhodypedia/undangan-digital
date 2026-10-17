@@ -13,6 +13,7 @@ import {
   Users,
 } from "lucide-react";
 
+import { LiveInvitationPreview } from "@/components/invitation/live-preview";
 import { Reveal } from "@/components/invitation/reveal";
 import { ScrollProgress } from "@/components/marketing/scroll-progress";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,17 @@ export default async function LandingPage() {
   const whatsapp = settings[SITE_SETTINGS_KEYS.contactWhatsapp];
   const previewTemplates = templates.filter((t) => t.isActive).slice(0, 6);
   const sampleHref = sampleSlug ? `/u/${sampleSlug}` : "#template";
+  const previewConfig = previewTemplates[0]
+    ? normalizeTemplateConfig(previewTemplates[0].config)
+    : null;
+  const previewColors = previewConfig?.colors ?? {
+    primary: "#0b3d2e",
+    accent: "#c9a24b",
+    background: "#f7f3ea",
+    surface: "#ffffff",
+    text: "#17241d",
+  };
+  const previewFont = previewConfig?.fontDisplay ?? "Playfair Display";
 
   return (
     <div className="relative flex min-h-svh flex-col overflow-x-hidden bg-[#f7f3ea] text-[#17241d]">
@@ -208,34 +220,50 @@ export default async function LandingPage() {
             </div>
 
             <div className="relative mx-auto w-full max-w-sm">
-              <div className="anim-float rotate-3 rounded-[2rem] border border-black/5 bg-white p-3 shadow-2xl">
-                <div className="relative aspect-[9/16] overflow-hidden rounded-[1.5rem] bg-gradient-to-b from-[#0b3d2e] to-[#0b3d2e]/80 p-6 text-center text-white">
-                  <div
-                    aria-hidden
-                    className="absolute inset-3 rounded-[1.3rem] border border-[#c9a24b]/40"
+              <div className="anim-float rotate-[2.5deg] rounded-[2rem] border border-black/5 bg-white p-3 shadow-2xl">
+                <div className="relative aspect-[9/16] overflow-hidden rounded-[1.5rem]">
+                  <LiveInvitationPreview
+                    coupleTitle="Arya & Aisyah"
+                    dateLabel="Sabtu, 12 Desember 2026"
+                    subtitle="The Wedding Of"
+                    quote="Dan di antara tanda-tanda kekuasaan-Nya, Dia menciptakan pasangan."
+                    greeting="Dengan memohon rahmat Allah, kami mengundang Anda."
+                    closing="Merupakan kebahagiaan bagi kami apabila Anda berkenan hadir."
+                    coverPhoto="https://picsum.photos/seed/lvcover/400/400"
+                    colors={previewColors}
+                    fontDisplay={previewFont}
+                    events={[
+                      {
+                        name: "Akad Nikah",
+                        date: "Sabtu, 12 Desember 2026",
+                        time: "09.00 - 11.00 WIB",
+                        venue: "Masjid Agung",
+                      },
+                    ]}
+                    photos={[
+                      "https://picsum.photos/seed/lv1/400/520",
+                      "https://picsum.photos/seed/lv2/400/520",
+                      "https://picsum.photos/seed/lv3/400/520",
+                    ]}
+                    scroll
                   />
-                  <p className="mt-10 text-[11px] uppercase tracking-[0.3em] text-[#c9a24b]">
-                    The Wedding Of
-                  </p>
-                  <p className="mt-4 font-display text-4xl">Arya &amp; Aisyah</p>
-                  <div className="mx-auto mt-4 h-px w-14 bg-[#c9a24b]" />
-                  <p className="mt-4 text-xs text-white/70">
-                    Sabtu, 12 Desember 2026
-                  </p>
-                  <div className="sheen mt-10 rounded-full bg-[#c9a24b] px-5 py-2 text-xs font-medium text-[#0b3d2e]">
-                    Buka Undangan
-                  </div>
                 </div>
               </div>
 
-              <div className="anim-float absolute -bottom-6 -left-6 -rotate-6 rounded-2xl border border-black/5 bg-white p-3 shadow-xl" style={{ animationDelay: "0.8s" }}>
+              <div
+                className="anim-float absolute -bottom-6 -left-6 -rotate-6 rounded-2xl border border-black/5 bg-white p-3 shadow-xl"
+                style={{ animationDelay: "0.8s" }}
+              >
                 <p className="text-[10px] uppercase tracking-wide opacity-60">
                   Konfirmasi
                 </p>
                 <p className="font-display text-lg">248 tamu hadir</p>
               </div>
 
-              <div className="anim-float absolute -top-4 -right-4 rotate-6 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-xl" style={{ animationDelay: "1.6s" }}>
+              <div
+                className="anim-float absolute -top-4 -right-4 rotate-6 rounded-2xl border border-black/5 bg-white px-3 py-2 shadow-xl"
+                style={{ animationDelay: "1.6s" }}
+              >
                 <p className="flex items-center gap-1.5 text-xs font-medium">
                   <Sparkles className="size-3.5 text-[#c9a24b]" /> Dibuat AI
                 </p>

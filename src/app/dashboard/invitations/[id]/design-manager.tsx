@@ -15,6 +15,8 @@ import {
 import { ActionForm } from "@/components/forms/action-form";
 import { ImageUploader } from "@/components/forms/image-uploader";
 import { TemplatePreview } from "@/components/dashboard/template-preview";
+import { LiveInvitationPreview } from "@/components/invitation/live-preview";
+import { formatDateID } from "@/lib/time";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -365,45 +367,35 @@ export function DesignManager({
       <div className="space-y-3 lg:sticky lg:top-6 lg:self-start">
         <p className="text-sm font-medium">Pratinjau langsung</p>
         <div className="relative h-80 overflow-hidden rounded-2xl border">
-          {backgroundImage ? (
-            <div
-              className="absolute -inset-4 bg-cover bg-center"
-              style={{
-                backgroundImage: `url(${backgroundImage})`,
-                filter: blur ? `blur(${blur}px)` : undefined,
-              }}
-            />
-          ) : (
-            <div
-              className="absolute inset-0"
-              style={{ background: invitation.themeColor }}
-            />
-          )}
-          <div
-            className="absolute inset-0"
-            style={{ background: `rgba(0,0,0,${overlay / 100})` }}
+          <LiveInvitationPreview
+            coupleTitle={coupleTitle}
+            dateLabel={
+              invitation.eventDate
+                ? formatDateID(invitation.eventDate)
+                : "Segera"
+            }
+            subtitle="Undangan Pernikahan"
+            coverPhoto={invitation.coverPhoto ?? undefined}
+            backgroundImage={backgroundImage || undefined}
+            overlay={overlay}
+            blur={blur}
+            colors={{
+              primary: invitation.themeColor || "#0b3d2e",
+              accent: invitation.accentColor || "#c9a24b",
+              background: invitation.backgroundImage ? "#0f172a" : "#f7f3ea",
+              surface: "#ffffff",
+              text: "#17241d",
+            }}
+            fontDisplay={
+              invitation.customConfig?.fontDisplay ?? "Playfair Display"
+            }
+            showSections={false}
           />
-          <div className="relative flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-white">
-            <span className="text-[10px] uppercase tracking-[0.4em] text-white/70">
-              Undangan
-            </span>
-            <span className="font-display text-2xl">{coupleTitle}</span>
-            <span className="h-px w-10" style={{ background: invitation.accentColor }} />
-            <span
-              className="rounded-full px-4 py-1.5 text-[11px] font-medium"
-              style={{
-                background: invitation.accentColor,
-                color: invitation.themeColor,
-              }}
-            >
-              Buka Undangan
-            </span>
-          </div>
         </div>
         <p className="text-xs text-muted-foreground">
-          Gelap {overlay}% · Blur {blur}px. Geser slider untuk melihat
-          perubahannya langsung. Kurangi gelap bila foto terlalu terang, tambah
-          blur agar tulisan lebih terbaca.
+          Gelap {overlay}% · Blur {blur}px. Geser slider — pratinjau langsung
+          berubah. Kurangi gelap bila foto terlalu terang, tambah blur agar
+          tulisan lebih terbaca.
         </p>
       </div>
     </div>

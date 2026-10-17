@@ -96,6 +96,18 @@ export default async function PublicInvitationPage(
     primary: invitation.themeColor || config.colors.primary,
     accent: invitation.accentColor || config.colors.accent,
   };
+  const colorLuminance = (hex: string) => {
+    const c = (hex || "#ffffff").replace("#", "");
+    const r = parseInt(c.slice(0, 2), 16) / 255;
+    const g = parseInt(c.slice(2, 4), 16) / 255;
+    const b = parseInt(c.slice(4, 6), 16) / 255;
+    const lin = (v: number) =>
+      v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+    return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
+  };
+  const darkBg = Boolean(invitation.backgroundImage)
+    ? true
+    : colorLuminance(colors.background) < 0.45;
 
   const guest = codeParam ? await getGuestByCode(codeParam) : null;
   const validGuest =
@@ -315,6 +327,7 @@ export default async function PublicInvitationPage(
           backgroundImage={invitation.backgroundImage}
           backgroundOverlay={invitation.backgroundOverlay}
           backgroundBlur={invitation.backgroundBlur}
+          darkBg={darkBg}
           watermark={showWatermark}
           watermarkText={settings[SITE_SETTINGS_KEYS.watermarkText] || brand}
           navItems={navItems}
@@ -792,14 +805,10 @@ export default async function PublicInvitationPage(
               </Reveal>
             ) : null}
 
-            <footer className="space-y-2 pt-4 text-center text-xs opacity-70">
-              <span className="inv-ornament" />
-              <p className="font-display text-sm text-balance break-words">{coupleTitle}</p>
-              <p>
-                Dibuat dengan{" "}
-                <span style={{ color: colors.accent }}>{brand}</span>
-              </p>
-            </footer>
+            <p className="inv-text-contrast-glow text-center text-xs opacity-70">
+              {coupleTitle} ·{" "}
+              <span style={{ color: colors.accent }}>{brand}</span>
+            </p>
           </div>
         </InvitationScreen>
       </div>
