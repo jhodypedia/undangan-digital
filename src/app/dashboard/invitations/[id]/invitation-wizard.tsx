@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   AlbumManager,
@@ -171,7 +172,13 @@ export function InvitationWizard({
             <ChevronRight className="size-4" />
           </Button>
         ) : (
-          <Button type="button" variant="secondary" onClick={() => setStep(0)}>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => {
+              toast.success("Semua langkah selesai. Undangan siap digunakan.");
+            }}
+          >
             Selesai
           </Button>
         )}
