@@ -116,7 +116,11 @@ export function InvitationWizard({
           <EventsManager invitationId={invitation.id} items={events} />
         ) : null}
         {step === 2 ? (
-          <StoriesManager invitationId={invitation.id} items={stories} />
+          <StoriesManager
+            invitationId={invitation.id}
+            items={stories}
+            maxMb={maxMb}
+          />
         ) : null}
         {step === 3 ? (
           <DesignManager

@@ -159,9 +159,11 @@ export function EventsManager({
 export function StoriesManager({
   invitationId,
   items,
+  maxMb = 5,
 }: {
   invitationId: number;
   items: Story[];
+  maxMb?: number;
 }) {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_1.2fr]">
@@ -175,6 +177,16 @@ export function StoriesManager({
               title={item.title}
               subtitle={formatDateTimeWIB(item.storyDate)}
             >
+              {item.photoUrl ? (
+                <Image
+                  src={item.photoUrl}
+                  alt={item.title}
+                  width={112}
+                  height={80}
+                  unoptimized
+                  className="mt-2 h-20 w-28 rounded-md object-cover"
+                />
+              ) : null}
               <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
                 {item.description}
               </p>
@@ -194,15 +206,13 @@ export function StoriesManager({
           <Label htmlFor="story-title">Judul</Label>
           <Input id="story-title" name="title" placeholder="Pertemuan pertama" required />
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="story-date">Tanggal (WIB)</Label>
-            <Input id="story-date" name="storyDate" type="datetime-local" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="story-photo">URL foto</Label>
-            <Input id="story-photo" name="photoUrl" placeholder="https://" />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="story-date">Tanggal (WIB)</Label>
+          <Input id="story-date" name="storyDate" type="datetime-local" />
+        </div>
+        <div className="space-y-2">
+          <Label>Foto cerita</Label>
+          <ImageUploader name="photoUrl" maxMb={maxMb} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="story-desc">Deskripsi</Label>
