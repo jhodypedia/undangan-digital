@@ -68,13 +68,17 @@ export function InvitationWizard({
   const back = () => setStep((s) => Math.max(0, s - 1));
 
   const handleNext = () => {
-    const form = containerRef.current?.querySelector("form");
-    if (form) {
-      form.requestSubmit();
-      // advance happens via onSuccess when save succeeds
-    } else {
-      advance();
+    // Hanya langkah "Info & mempelai" yang punya form simpan utama.
+    // Langkah lain (manajer) menyimpan tiap item secara inline, jadi cukup maju.
+    if (step === 0) {
+      const form = containerRef.current?.querySelector("form");
+      if (form) {
+        form.requestSubmit();
+        // advance terjadi via onSuccess saat simpan berhasil
+        return;
+      }
     }
+    advance();
   };
 
   return (
