@@ -3,6 +3,7 @@
 import { updateInvitation } from "@/app/dashboard/invitations/actions";
 import { ActionForm } from "@/components/forms/action-form";
 import { ImageUploader } from "@/components/forms/image-uploader";
+import { UseLocationButton } from "@/components/forms/use-location-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -214,6 +215,13 @@ export function InvitationInfoForm({
           <Field label="Tautan Google Maps" name="mapsUrl" defaultValue={invitation.mapsUrl} placeholder="https://maps.app.goo.gl/..." />
           <Field label="Tautan live streaming" name="liveStreamUrl" defaultValue={invitation.liveStreamUrl} />
         </div>
+        <UseLocationButton
+          latId="latitude"
+          lngId="longitude"
+          addressId="address"
+          locationNameId="locationName"
+          mapsUrlId="mapsUrl"
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Latitude" name="latitude" defaultValue={invitation.latitude} placeholder="-6.200000" />
           <Field label="Longitude" name="longitude" defaultValue={invitation.longitude} placeholder="106.816666" />

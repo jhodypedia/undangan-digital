@@ -21,6 +21,7 @@ import {
   ImageUploader,
   MultiImageUploader,
 } from "@/components/forms/image-uploader";
+import { UseLocationButton } from "@/components/forms/use-location-button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -132,6 +133,14 @@ export function EventsManager({
             kosong.
           </p>
         </div>
+        <UseLocationButton
+          latId="event-lat"
+          lngId="event-lng"
+          addressId="event-address"
+          locationNameId="event-venue"
+          mapsUrlId="event-maps"
+          label="Gunakan lokasi saya"
+        />
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="event-lat">Latitude</Label>
