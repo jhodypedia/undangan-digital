@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import {
+  Crop,
   ImagePlus,
   Loader2,
   Trash2,
@@ -13,6 +14,7 @@ import { toast } from "sonner";
 
 import { uploadImageAction } from "@/app/dashboard/invitations/actions";
 import { Button } from "@/components/ui/button";
+import { ImageEditor } from "@/components/forms/image-editor";
 import { cn } from "@/lib/utils";
 
 export function ImageUploader({
@@ -40,17 +42,11 @@ export function ImageUploader({
   const [dragging, setDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File | undefined) => {
-    if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Format harus JPG, PNG, atau WEBP.");
-      return;
-    }
-    if (file.size > maxMb * 1024 * 1024) {
-      toast.error(`Ukuran maksimal ${maxMb} MB.`);
-      return;
-    }
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
+  const [editorFile, setEditorFile] = useState<File | null>(null);
 
+  const uploadFile = (file: File) => {
     startTransition(async () => {
       const formData = new FormData();
       formData.append("file", file);
@@ -64,6 +60,28 @@ export function ImageUploader({
         toast.success("Foto berhasil diunggah.");
       }
     });
+  };
+
+  const handleFile = (file: File | undefined) => {
+    if (!file) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      toast.error("Format harus JPG, PNG, atau WEBP.");
+      return;
+    }
+    if (file.size > maxMb * 1024 * 1024) {
+      toast.error(`Ukuran maksimal ${maxMb} MB.`);
+      return;
+    }
+    setEditorFile(file);
+    setEditorSrc(URL.createObjectURL(file));
+    setEditorOpen(true);
+  };
+
+  const handleCropComplete = (cropped: File) => {
+    if (editorSrc) URL.revokeObjectURL(editorSrc);
+    setEditorSrc(null);
+    setEditorFile(null);
+    uploadFile(cropped);
   };
 
   return (
@@ -151,6 +169,20 @@ export function ImageUploader({
           }}
         />
       </div>
+      <ImageEditor
+        open={editorOpen}
+        src={editorSrc}
+        fileName={editorFile?.name ?? "foto.jpg"}
+        onOpenChange={(open) => {
+          setEditorOpen(open);
+          if (!open && editorSrc) {
+            URL.revokeObjectURL(editorSrc);
+            setEditorSrc(null);
+            setEditorFile(null);
+          }
+        }}
+        onComplete={handleCropComplete}
+      />
     </div>
   );
 }
@@ -216,6 +248,49 @@ export function MultiImageUploader({
     }
   };
 
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorSrc, setEditorSrc] = useState<string | null>(null);
+  const [editorFile, setEditorFile] = useState<File | null>(null);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+
+  const startEdit = async (url: string, index: number) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const file = new File([blob], `foto-${index + 1}.jpg`, {
+        type: blob.type || "image/jpeg",
+      });
+      setEditorFile(file);
+      setEditorSrc(URL.createObjectURL(file));
+      setEditingIndex(index);
+      setEditorOpen(true);
+    } catch {
+      toast.error("Gagal memuat foto untuk diedit.");
+    }
+  };
+
+  const handleCropCompleteMulti = async (cropped: File) => {
+    if (editingIndex === null) return;
+    const formData = new FormData();
+    formData.append("file", cropped);
+    const result = await uploadImageAction({}, formData);
+    if (result.error) {
+      toast.error(result.error);
+    } else if (result.success) {
+      setUrls((prev) =>
+        prev.map((item, idx) =>
+          idx === editingIndex ? result.success! : item,
+        ),
+      );
+      toast.success("Foto diperbarui.");
+    }
+    if (editorSrc) URL.revokeObjectURL(editorSrc);
+    setEditorSrc(null);
+    setEditorFile(null);
+    setEditingIndex(null);
+    setEditorOpen(false);
+  };
+
   const remaining = max - urls.length;
 
   return (
@@ -239,16 +314,26 @@ export function MultiImageUploader({
                 unoptimized
                 className="size-full object-cover"
               />
-              <button
-                type="button"
-                onClick={() =>
-                  setUrls((prev) => prev.filter((item) => item !== url))
-                }
-                className="absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-black/60 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                aria-label="Hapus foto"
-              >
-                <X className="size-3.5" />
-              </button>
+              <div className="absolute top-1 right-1 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => startEdit(url, urls.indexOf(url))}
+                  className="grid size-6 place-items-center rounded-full bg-black/60 text-white"
+                  aria-label="Edit foto"
+                >
+                  <Crop className="size-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setUrls((prev) => prev.filter((item) => item !== url))
+                  }
+                  className="grid size-6 place-items-center rounded-full bg-black/60 text-white"
+                  aria-label="Hapus foto"
+                >
+                  <X className="size-3.5" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -307,6 +392,21 @@ export function MultiImageUploader({
           }}
         />
       </div>
+      <ImageEditor
+        open={editorOpen}
+        src={editorSrc}
+        fileName={editorFile?.name ?? "foto.jpg"}
+        onOpenChange={(open) => {
+          setEditorOpen(open);
+          if (!open && editorSrc) {
+            URL.revokeObjectURL(editorSrc);
+            setEditorSrc(null);
+            setEditorFile(null);
+            setEditingIndex(null);
+          }
+        }}
+        onComplete={handleCropCompleteMulti}
+      />
     </div>
   );
 }
