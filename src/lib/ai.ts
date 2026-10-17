@@ -171,25 +171,41 @@ export async function generateTemplate(
     return fallbackTemplate(prompt);
   }
 
+  const buildBody = (withFormat: boolean) =>
+    JSON.stringify({
+      model,
+      temperature: 0.8,
+      ...(withFormat ? { response_format: { type: "json_object" } } : {}),
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
+        { role: "user", content: prompt },
+      ],
+    });
+
   try {
-    const response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+    let response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
-      body: JSON.stringify({
-        model,
-        temperature: 0.8,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: SYSTEM_PROMPT },
-          { role: "user", content: prompt },
-        ],
-      }),
+      body: buildBody(true),
     });
 
+    if (!response.ok && response.status === 400) {
+      // Retry without response_format for providers that don't support it.
+      response = await fetch(`${baseUrl.replace(/\/$/, "")}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: buildBody(false),
+      });
+    }
+
     if (!response.ok) {
+      console.error("AI template HTTP error:", response.status, await response.text().catch(() => ""));
       return fallbackTemplate(prompt);
     }
 
@@ -199,11 +215,23 @@ export async function generateTemplate(
     const content = data.choices?.[0]?.message?.content;
     if (!content) return fallbackTemplate(prompt);
 
-    const parsed = JSON.parse(content) as {
-      name?: string;
-      description?: string;
-      config?: Partial<TemplateConfig>;
-    };
+    // Be tolerant of providers that wrap JSON in markdown fences.
+    const cleaned = content
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    let parsed: { name?: string; description?: string; config?: Partial<TemplateConfig> };
+    try {
+      parsed = JSON.parse(cleaned) as {
+        name?: string;
+        description?: string;
+        config?: Partial<TemplateConfig>;
+      };
+    } catch (error) {
+      console.error("AI template JSON parse failed:", error, content.slice(0, 500));
+      return fallbackTemplate(prompt);
+    }
 
     return {
       name: parsed.name?.slice(0, 60) || titleCase(prompt) || "Template AI",
@@ -214,7 +242,8 @@ export async function generateTemplate(
       source: "ai",
       prompt,
     };
-  } catch {
+  } catch (error) {
+    console.error("AI template generation failed:", error);
     return fallbackTemplate(prompt);
   }
 }

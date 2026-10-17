@@ -111,7 +111,12 @@ export function DesignManager({
         toast.error(result.error);
         return;
       }
-      setGenerated(result.generated ?? null);
+      if (result.generated?.config) {
+        setGenerated(result.generated);
+        toast.success("Pratinjau tampilan siap.");
+      } else {
+        toast.error("AI tidak mengembalikan tampilan yang valid. Coba lagi.");
+      }
     });
   };
 
@@ -352,7 +357,7 @@ export function DesignManager({
               ) : null}
             </div>
             <div className="rounded-2xl border bg-muted/30 p-4">
-              {generated ? (
+              {generated?.config ? (
                 <TemplatePreview config={generated.config} />
               ) : (
                 <p className="grid h-full min-h-56 place-items-center text-center text-xs text-muted-foreground">

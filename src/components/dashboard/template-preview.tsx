@@ -59,6 +59,7 @@ export function TemplatePreview({
   config: TemplateConfig;
   className?: string;
 }) {
+  if (!config?.colors) return null;
   const { colors } = config;
   const frameClass =
     config.frameStyle === "square"
