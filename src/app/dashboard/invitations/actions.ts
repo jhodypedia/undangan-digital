@@ -499,9 +499,16 @@ export async function uploadImageAction(
   const settings = await getSettings();
   const maxMb = Number(settings[SITE_SETTINGS_KEYS.uploadMaxMb] ?? "5") || 5;
 
-  const result = await saveImage(file, maxMb);
-  if (!result.ok) return { error: result.error };
-  return { success: result.url };
+  try {
+    const result = await saveImage(file, maxMb);
+    if (!result.ok) return { error: result.error };
+    return { success: result.url };
+  } catch (error) {
+    console.error("uploadImageAction failed", error);
+    return {
+      error: "Gagal menyimpan foto di server. Coba lagi sebentar lagi.",
+    };
+  }
 }
 
 const clamp = (value: number, min: number, max: number) =>
@@ -539,6 +546,49 @@ export async function applyTemplateAction(
   revalidatePath(`/dashboard/invitations/${invitationId}`);
   revalidatePath(`/u/${owned.slug}`);
   return { success: `Template "${template.name}" diterapkan.` };
+}
+
+/**
+ * Menyegarkan desain undangan dari template aktifnya: config template terbaru
+ * disalin ke `customConfig`, supaya undangan lama ikut menerima pembaruan
+ * template (ornamen, layout, warna) tanpa mengganti template yang dipilih.
+ * Menimpa penyesuaian desain kustom yang tersimpan pada undangan.
+ */
+export async function reapplyTemplateAction(
+  invitationId: number,
+): Promise<FormState> {
+  const user = await requireUser();
+  const owned = await ownedInvitation(invitationId, user.id);
+  if (!owned) return { error: "Undangan tidak ditemukan." };
+  if (!owned.templateId) {
+    return { error: "Undangan ini belum memiliki template aktif." };
+  }
+
+  const [template] = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, owned.templateId), eq(templates.isActive, true)))
+    .limit(1);
+  if (!template) return { error: "Template aktif tidak tersedia." };
+
+  if (template.isPremium && !isPremiumActive(user)) {
+    return { error: "Template ini khusus pengguna premium." };
+  }
+
+  await db
+    .update(invitations)
+    .set({
+      customConfig: normalizeTemplateConfig(template.config),
+      themeColor: template.primaryColor,
+      accentColor: template.accentColor,
+    })
+    .where(eq(invitations.id, invitationId));
+
+  revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
+  return {
+    success: `Desain disegarkan dari template "${template.name}".`,
+  };
 }
 
 export async function updateInvitationDesign(

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Eraser, Lock, Loader2, Sparkles, Wand2 } from "lucide-react";
+import { Eraser, Lock, Loader2, RefreshCw, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -11,8 +11,10 @@ import {
   clearInvitationLookAction,
   generateBackgroundAction,
   previewInvitationLookAction,
+  reapplyTemplateAction,
   updateInvitationDesign,
 } from "@/app/dashboard/invitations/actions";
+import { useConfirm } from "@/components/feedback/confirm";
 import { ActionForm } from "@/components/forms/action-form";
 import { ImageUploader } from "@/components/forms/image-uploader";
 import { TemplatePreview } from "@/components/dashboard/template-preview";
@@ -60,6 +62,10 @@ export function DesignManager({
   planName: string;
 }) {
   const router = useRouter();
+  const confirm = useConfirm();
+  const [reapplyingTemplate, startReapplyTemplate] = useTransition();
+  const activeTemplate =
+    templates.find((item) => item.id === invitation.templateId) ?? null;
   const [backgroundImage, setBackgroundImage] = useState(
     invitation.backgroundImage ?? "",
   );
@@ -177,6 +183,27 @@ export function DesignManager({
     });
   };
 
+  const reapplyTemplate = async () => {
+    if (!activeTemplate) return;
+    const ok = await confirm({
+      title: "Terapkan ulang dari template?",
+      description: `Desain undangan ini akan disegarkan ke konfigurasi terbaru template "${activeTemplate.name}". Penyesuaian desain kustom yang tersimpan (termasuk tampilan AI) akan ditimpa.`,
+      confirmLabel: "Terapkan ulang",
+      tone: "warning",
+    });
+    if (!ok) return;
+    startReapplyTemplate(async () => {
+      const result = await reapplyTemplateAction(invitation.id);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(result.success ?? "Desain disegarkan dari template.");
+      setHasCustomLook(true);
+      router.refresh();
+    });
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
@@ -279,6 +306,25 @@ export function DesignManager({
                 ) : null}
                 Terapkan template
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={reapplyTemplate}
+                disabled={!activeTemplate || reapplyingTemplate}
+              >
+                {reapplyingTemplate ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="size-4" />
+                )}
+                Terapkan ulang dari template
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                {activeTemplate
+                  ? `Template aktif undangan ini: ${activeTemplate.name}. Gunakan terapkan ulang bila template diperbarui dan undangan lama belum ikut berubah.`
+                  : "Undangan ini belum memiliki template aktif."}
+              </p>
             </div>
           </CardContent>
         </Card>

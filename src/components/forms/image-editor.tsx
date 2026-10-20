@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import Cropper, { type Area } from "react-easy-crop";
 import "react-easy-crop/react-easy-crop.css";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +14,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  createImage,
+  getRotatedSize,
+  jpegFileFromBlob,
+  maxUploadBytes,
+  renderImageToJpegBlob,
+} from "@/lib/image-client";
 
 const ASPECTS = [
   { label: "Bebas", value: 0 },
@@ -23,86 +31,18 @@ const ASPECTS = [
   { label: "9:16", value: 9 / 16 },
 ];
 
-function createImage(url: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new window.Image();
-    image.addEventListener("load", () => resolve(image));
-    image.addEventListener("error", (error) => reject(error));
-    image.crossOrigin = "anonymous";
-    image.src = url;
-  });
-}
-
-function getRotatedSize(width: number, height: number, rotation: number) {
-  const rotRad = (rotation * Math.PI) / 180;
-  return {
-    width:
-      Math.abs(width * Math.cos(rotRad)) +
-      Math.abs(height * Math.sin(rotRad)),
-    height:
-      Math.abs(width * Math.sin(rotRad)) +
-      Math.abs(height * Math.cos(rotRad)),
-  };
-}
-
-async function getCroppedBlob(
-  imageSrc: string,
-  pixelCrop: Area,
-  rotation: number,
-  mime = "image/jpeg",
-): Promise<Blob> {
-  const image = await createImage(imageSrc);
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Canvas tidak tersedia.");
-
-  const rotRad = (rotation * Math.PI) / 180;
-  const { width: bBoxWidth, height: bBoxHeight } = getRotatedSize(
-    image.width,
-    image.height,
-    rotation,
-  );
-
-  canvas.width = bBoxWidth;
-  canvas.height = bBoxHeight;
-
-  ctx.translate(bBoxWidth / 2, bBoxHeight / 2);
-  ctx.rotate(rotRad);
-  ctx.drawImage(image, -image.width / 2, -image.height / 2);
-
-  const data = ctx.getImageData(
-    pixelCrop.x,
-    pixelCrop.y,
-    pixelCrop.width,
-    pixelCrop.height,
-  );
-
-  canvas.width = pixelCrop.width;
-  canvas.height = pixelCrop.height;
-  ctx.putImageData(data, 0, 0);
-
-  return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("Gagal membuat gambar."));
-      },
-      mime,
-      0.92,
-    );
-  });
-}
-
 export function ImageEditor({
   open,
   src,
   fileName = "foto.jpg",
+  maxSizeMb = 10,
   onOpenChange,
   onComplete,
 }: {
   open: boolean;
   src: string | null;
   fileName?: string;
+  maxSizeMb?: number;
   onOpenChange: (open: boolean) => void;
   onComplete: (file: File) => void;
 }) {
@@ -118,17 +58,61 @@ export function ImageEditor({
   }, []);
 
   const handleConfirm = async () => {
-    if (!src || !croppedAreaPixels) return;
+    if (!src) {
+      toast.error("Pilih foto terlebih dahulu.");
+      return;
+    }
+    if (!croppedAreaPixels) {
+      toast.error("Area potong belum siap. Tunggu foto selesai dimuat.");
+      return;
+    }
+
     setProcessing(true);
     try {
-      const blob = await getCroppedBlob(src, croppedAreaPixels, rotation);
-      const file = new File([blob], fileName.replace(/\.[^.]+$/, ".jpg"), {
-        type: "image/jpeg",
-      });
-      onComplete(file);
+      const image = await createImage(src);
+      const blob = await renderImageToJpegBlob(
+        image,
+        croppedAreaPixels,
+        rotation,
+        { maxBytes: maxUploadBytes(maxSizeMb) },
+      );
+      onComplete(jpegFileFromBlob(blob, fileName));
       onOpenChange(false);
     } catch (error) {
-      console.error(error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal memproses foto. Coba lagi.",
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleWithoutCrop = async () => {
+    if (!src) {
+      toast.error("Pilih foto terlebih dahulu.");
+      return;
+    }
+
+    setProcessing(true);
+    try {
+      const image = await createImage(src);
+      const full = getRotatedSize(image.width, image.height, rotation);
+      const blob = await renderImageToJpegBlob(
+        image,
+        { x: 0, y: 0, width: full.width, height: full.height },
+        rotation,
+        { maxBytes: maxUploadBytes(maxSizeMb) },
+      );
+      onComplete(jpegFileFromBlob(blob, fileName));
+      onOpenChange(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal memproses foto. Coba lagi.",
+      );
     } finally {
       setProcessing(false);
     }
@@ -136,15 +120,19 @@ export function ImageEditor({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent key={src ?? "closed"} className="max-w-3xl">
+      <DialogContent
+        key={src ?? "closed"}
+        className="max-h-[92vh] max-w-3xl overflow-y-auto"
+      >
         <DialogHeader>
           <DialogTitle className="font-display">Edit foto</DialogTitle>
           <DialogDescription>
-            Geser, zoom, putar, dan pilih rasio potong. Hasil akan disimpan.
+            Geser, zoom, putar, dan pilih rasio potong. Foto otomatis
+            diperkecil dan dikompres sebelum diunggah.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="relative h-[420px] w-full overflow-hidden rounded-xl bg-muted">
+        <div className="relative h-[42vh] min-h-[220px] max-h-[420px] w-full overflow-hidden rounded-xl bg-muted sm:h-[420px]">
           {src ? (
             <Cropper
               image={src}
@@ -156,6 +144,12 @@ export function ImageEditor({
               onZoomChange={setZoom}
               onRotationChange={setRotation}
               onCropComplete={onCropComplete}
+              mediaProps={{
+                onError: () =>
+                  toast.error(
+                    "Foto tidak bisa ditampilkan browser. Coba JPG, PNG, atau WEBP.",
+                  ),
+              }}
             />
           ) : null}
         </div>
@@ -207,7 +201,7 @@ export function ImageEditor({
           />
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-wrap gap-2 sm:justify-end">
           <Button
             type="button"
             variant="ghost"
@@ -216,7 +210,19 @@ export function ImageEditor({
           >
             Batal
           </Button>
-          <Button type="button" onClick={handleConfirm} disabled={processing}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleWithoutCrop}
+            disabled={processing || !src}
+          >
+            Tanpa potong
+          </Button>
+          <Button
+            type="button"
+            onClick={handleConfirm}
+            disabled={processing || !src || !croppedAreaPixels}
+          >
             {processing ? "Memproses..." : "Terapkan"}
           </Button>
         </DialogFooter>

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="Preview tema Elegant Rose">
+  <defs>
+    <pattern id="motif" width="64" height="64" patternUnits="userSpaceOnUse">
+      <g stroke="#c48b9f" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="32" cy="22" r="14"/><circle cx="32" cy="22" r="8" stroke-opacity=".7"/><circle cx="32" cy="22" r="3" fill="#c48b9f" stroke="none"/><path d="M18 39C10 41 6 49 8 57c8-2 14-8 14-16" stroke-opacity=".7"/><path d="M46 39c8 2 12 10 10 18-8-2-14-8-14-16" stroke-opacity=".7"/></g>
+    </pattern>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".10"/>
+      <stop offset=".45" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="#3f1d2e"/>
+  <rect width="600" height="800" fill="url(#motif)" opacity=".16"/>
+  <rect width="600" height="800" fill="url(#sheen)"/>
+  <rect x="26" y="26" width="548" height="748" fill="none" stroke="#c48b9f" stroke-width="2"/>
+  <rect x="38" y="38" width="524" height="724" fill="none" stroke="#c48b9f" stroke-width=".75" opacity=".7"/>
+  <text x="300" y="118" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" letter-spacing="7" fill="#c48b9f">THE WEDDING OF</text>
+  <g stroke="#c48b9f" stroke-width="1.6"><path d="M216 140h56M328 140h56"/><path d="M300 132l8 8-8 8-8-8Z" fill="#c48b9f" stroke="none"/></g>
+  <path d="M178 636V332a122 122 0 0 1 244 0v304Z" fill="#fdf6f8"/>
+  <path d="M178 636V332a122 122 0 0 1 244 0v304Z" fill="none" stroke="#c48b9f" stroke-width="2.5"/>
+  <path d="M192 636V338a108 108 0 0 1 216 0v298Z" fill="none" stroke="#c48b9f" stroke-width=".75" opacity=".65"/>
+
+  <g transform="translate(204 246) scale(3)"><g stroke="#3f1d2e" stroke-width="2" fill="none" stroke-linecap="round"><circle cx="32" cy="22" r="14"/><circle cx="32" cy="22" r="8" stroke-opacity=".7"/><circle cx="32" cy="22" r="3" fill="#3f1d2e" stroke="none"/><path d="M18 39C10 41 6 49 8 57c8-2 14-8 14-16" stroke-opacity=".7"/><path d="M46 39c8 2 12 10 10 18-8-2-14-8-14-16" stroke-opacity=".7"/></g></g>
+  <text x="300" y="540" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="96" fill="#3f1d2e">ER</text>
+  <g stroke="#3f1d2e" stroke-width="1.4" opacity=".8"><path d="M238 566h44M318 566h44"/><path d="M300 559l6 7-6 7-6-7Z" fill="#3f1d2e" stroke="none"/></g>
+  <text x="300" y="612" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="17" letter-spacing="4" fill="#3f1d2e" opacity=".85">UNDANGAN DIGITAL</text>
+  <text x="300" y="700" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="33" fill="#ffffff">Elegant Rose</text>
+  <text x="300" y="734" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" letter-spacing="3.5" fill="#c48b9f">KELOPAK ROSE DAN GARIS TIPIS</text>
+</svg>

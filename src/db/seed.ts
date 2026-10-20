@@ -22,6 +22,25 @@ type SeedTemplate = {
   sortOrder: number;
 };
 
+/** Path artwork preview per template — dihasilkan scripts/generate-previews.mjs. */
+const previewPath = (code: string) => `/previews/${code}.svg`;
+
+/** Stringify stabil (kunci terurut) untuk membandingkan config JSON. */
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value) ?? "null";
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined)
+    .sort(([a], [b]) => (a < b ? -1 : 1));
+  return `{${entries
+    .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`)
+    .join(",")}}`;
+}
+
 function theme(options: {
   layout: TemplateConfig["layout"];
   coverStyle: TemplateConfig["coverStyle"];
@@ -689,6 +708,7 @@ async function main() {
       code: templates.code,
       name: templates.name,
       config: templates.config,
+      previewImage: templates.previewImage,
     })
     .from(templates);
   const existingCodes = new Set(existingTemplates.map((row) => row.code));
@@ -696,8 +716,37 @@ async function main() {
     (template) => !existingCodes.has(template.code),
   );
   if (missingTemplates.length > 0) {
-    await db.insert(templates).values(missingTemplates);
+    await db.insert(templates).values(
+      missingTemplates.map((template) => ({
+        ...template,
+        previewImage: previewPath(template.code),
+      })),
+    );
     console.log(`  ${missingTemplates.length} template ditambahkan.`);
+  }
+
+  // Sinkronisasi template bawaan yang sudah ada di DB lama: artwork preview
+  // selalu diperbarui, dan config diselaraskan dengan definisi seed terbaru
+  // (mis. setelah redesign sistem template). Template buatan admin dengan
+  // code di luar daftar seed tidak disentuh.
+  for (const template of SEED_TEMPLATES) {
+    const row = existingTemplates.find((item) => item.code === template.code);
+    if (!row) continue;
+    const nextPreview = previewPath(template.code);
+    const configDiffers =
+      stableStringify(row.config ?? null) !==
+      stableStringify(template.config);
+    if (row.previewImage === nextPreview && !configDiffers) continue;
+    await db
+      .update(templates)
+      .set({
+        previewImage: nextPreview,
+        ...(configDiffers ? { config: template.config } : {}),
+      })
+      .where(eq(templates.id, row.id));
+    console.log(
+      `  Tema ${template.name} disinkronkan (preview${configDiffers ? " + config" : ""}).`,
+    );
   }
 
   // Tema lama yang dibuat sebelum field `ornament` ada tetap mendapat artwork

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 800" role="img" aria-label="Preview tema Art Mandailing">
+  <defs>
+    <pattern id="motif" width="64" height="64" patternUnits="userSpaceOnUse">
+      <g stroke="#d4af37" stroke-width="2" fill="none" stroke-linecap="round"><path d="M0 10h64M0 54h64" stroke-width="4"/><path d="M-4 24l10 8-10 8M12 24l10 8-10 8M28 24l10 8-10 8M44 24l10 8-10 8M60 24l10 8-10 8"/><path d="M0 39h64" stroke-opacity=".5"/><path d="M8 16v8M24 16v8M40 16v8M56 16v8" stroke-opacity=".7"/></g>
+    </pattern>
+    <linearGradient id="sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".10"/>
+      <stop offset=".45" stop-color="#ffffff" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity=".18"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="800" fill="#78350f"/>
+  <rect width="600" height="800" fill="url(#motif)" opacity=".16"/>
+  <rect width="600" height="800" fill="url(#sheen)"/>
+  <rect x="26" y="26" width="548" height="748" fill="none" stroke="#d4af37" stroke-width="2"/>
+  <rect x="38" y="38" width="524" height="724" fill="none" stroke="#d4af37" stroke-width=".75" opacity=".7"/>
+  <text x="300" y="118" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="20" letter-spacing="7" fill="#d4af37">THE WEDDING OF</text>
+  <g stroke="#d4af37" stroke-width="1.6"><path d="M216 140h56M328 140h56"/><path d="M300 132l8 8-8 8-8-8Z" fill="#d4af37" stroke="none"/></g>
+  <path d="M178 636V332a122 122 0 0 1 244 0v304Z" fill="#f9f1e3"/>
+  <path d="M178 636V332a122 122 0 0 1 244 0v304Z" fill="none" stroke="#d4af37" stroke-width="2.5"/>
+  <path d="M192 636V338a108 108 0 0 1 216 0v298Z" fill="none" stroke="#d4af37" stroke-width=".75" opacity=".65"/>
+
+  <g transform="translate(204 246) scale(3)"><g stroke="#78350f" stroke-width="2" fill="none" stroke-linecap="round"><path d="M0 10h64M0 54h64" stroke-width="4"/><path d="M-4 24l10 8-10 8M12 24l10 8-10 8M28 24l10 8-10 8M44 24l10 8-10 8M60 24l10 8-10 8"/><path d="M0 39h64" stroke-opacity=".5"/><path d="M8 16v8M24 16v8M40 16v8M56 16v8" stroke-opacity=".7"/></g></g>
+  <text x="300" y="540" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="96" fill="#78350f">M</text>
+  <g stroke="#78350f" stroke-width="1.4" opacity=".8"><path d="M238 566h44M318 566h44"/><path d="M300 559l6 7-6 7-6-7Z" fill="#78350f" stroke="none"/></g>
+  <text x="300" y="612" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="17" letter-spacing="4" fill="#78350f" opacity=".85">UNDANGAN DIGITAL</text>
+  <text x="300" y="700" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="33" fill="#ffffff">Art Mandailing</text>
+  <text x="300" y="734" text-anchor="middle" font-family="Georgia, 'Times New Roman', serif" font-size="16" letter-spacing="3.5" fill="#d4af37">ULOS</text>
+</svg>

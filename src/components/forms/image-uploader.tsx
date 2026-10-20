@@ -15,6 +15,11 @@ import { toast } from "sonner";
 import { uploadImageAction } from "@/app/dashboard/invitations/actions";
 import { Button } from "@/components/ui/button";
 import { ImageEditor } from "@/components/forms/image-editor";
+import {
+  compressImageFile,
+  isImageSource,
+  sourceSizeLimitMb,
+} from "@/lib/image-client";
 import { cn } from "@/lib/utils";
 
 export function ImageUploader({
@@ -48,30 +53,40 @@ export function ImageUploader({
 
   const uploadFile = (file: File) => {
     startTransition(async () => {
-      const formData = new FormData();
-      formData.append("file", file);
-      const result = await uploadImageAction({}, formData);
-      if (result.error) {
-        toast.error(result.error);
-        return;
-      }
-      if (result.success) {
-        setUrl(result.success);
-        toast.success("Foto berhasil diunggah.");
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const result = await uploadImageAction({}, formData);
+        if (result.error) {
+          toast.error(result.error);
+          return;
+        }
+        if (result.success) {
+          setUrl(result.success);
+          toast.success("Foto berhasil diunggah.");
+        }
+      } catch (error) {
+        console.error(error);
+        toast.error("Upload gagal. Periksa koneksi lalu coba lagi.");
       }
     });
   };
 
   const handleFile = (file: File | undefined) => {
     if (!file) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-      toast.error("Format harus JPG, PNG, atau WEBP.");
+    if (!isImageSource(file)) {
+      toast.error("Pilih berkas foto (JPG, PNG, WEBP, atau HEIC).");
       return;
     }
-    if (file.size > maxMb * 1024 * 1024) {
-      toast.error(`Ukuran maksimal ${maxMb} MB.`);
+
+    const sourceLimit = sourceSizeLimitMb(maxMb);
+    if (file.size > sourceLimit * 1024 * 1024) {
+      toast.error(
+        `Foto terlalu besar. Maksimal ${sourceLimit} MB sebelum dikompres.`,
+      );
       return;
     }
+
     setEditorFile(file);
     setEditorSrc(URL.createObjectURL(file));
     setEditorOpen(true);
@@ -145,7 +160,7 @@ export function ImageUploader({
               Tarik foto ke sini atau pilih berkas
             </p>
             <p className="text-xs text-muted-foreground">
-              JPG, PNG, atau WEBP · maksimal {maxMb} MB
+              JPG, PNG, WEBP, atau HEIC · otomatis dikompres
             </p>
             <Button
               type="button"
@@ -161,7 +176,7 @@ export function ImageUploader({
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*,.heic,.heif"
           className="hidden"
           onChange={(event) => {
             handleFile(event.target.files?.[0]);
@@ -170,9 +185,11 @@ export function ImageUploader({
         />
       </div>
       <ImageEditor
+        key={editorSrc ?? "single-closed"}
         open={editorOpen}
         src={editorSrc}
         fileName={editorFile?.name ?? "foto.jpg"}
+        maxSizeMb={maxMb}
         onOpenChange={(open) => {
           setEditorOpen(open);
           if (!open && editorSrc) {
@@ -206,13 +223,15 @@ export function MultiImageUploader({
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
+
+    const sourceLimit = sourceSizeLimitMb(maxMb);
     const accepted = Array.from(files).filter((file) => {
-      if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
-        toast.error(`${file.name}: format harus JPG, PNG, atau WEBP.`);
+      if (!isImageSource(file)) {
+        toast.error(`${file.name}: pilih berkas foto.`);
         return false;
       }
-      if (file.size > maxMb * 1024 * 1024) {
-        toast.error(`${file.name}: melebihi ${maxMb} MB.`);
+      if (file.size > sourceLimit * 1024 * 1024) {
+        toast.error(`${file.name}: melebihi ${sourceLimit} MB.`);
         return false;
       }
       return true;
@@ -229,20 +248,36 @@ export function MultiImageUploader({
     setPending(true);
     setProgress({ done: 0, total: queue.length });
     let uploaded = 0;
-    for (const file of queue) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const result = await uploadImageAction({}, formData);
-      if (result.error) {
-        toast.error(result.error);
-      } else if (result.success) {
-        const url = result.success;
-        setUrls((prev) => [...prev, url]);
-        uploaded += 1;
+
+    try {
+      for (const file of queue) {
+        try {
+          const compressed = await compressImageFile(file, maxMb);
+          const formData = new FormData();
+          formData.append("file", compressed);
+          const result = await uploadImageAction({}, formData);
+          if (result.error) {
+            toast.error(`${file.name}: ${result.error}`);
+          } else if (result.success) {
+            const url = result.success;
+            setUrls((prev) => [...prev, url]);
+            uploaded += 1;
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error(
+            `${file.name}: ${
+              error instanceof Error ? error.message : "upload gagal."
+            }`,
+          );
+        } finally {
+          setProgress((prev) => ({ ...prev, done: prev.done + 1 }));
+        }
       }
-      setProgress((prev) => ({ ...prev, done: prev.done + 1 }));
+    } finally {
+      setPending(false);
     }
-    setPending(false);
+
     if (uploaded > 0) {
       toast.success(`${uploaded} foto berhasil diunggah.`);
     }
@@ -256,7 +291,11 @@ export function MultiImageUploader({
   const startEdit = async (url: string, index: number) => {
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error("Foto tidak ditemukan.");
       const blob = await response.blob();
+      if (!blob.type.startsWith("image/")) {
+        throw new Error("Berkas bukan foto.");
+      }
       const file = new File([blob], `foto-${index + 1}.jpg`, {
         type: blob.type || "image/jpeg",
       });
@@ -264,31 +303,42 @@ export function MultiImageUploader({
       setEditorSrc(URL.createObjectURL(file));
       setEditingIndex(index);
       setEditorOpen(true);
-    } catch {
-      toast.error("Gagal memuat foto untuk diedit.");
+    } catch (error) {
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Gagal memuat foto untuk diedit.",
+      );
     }
   };
 
   const handleCropCompleteMulti = async (cropped: File) => {
-    if (editingIndex === null) return;
-    const formData = new FormData();
-    formData.append("file", cropped);
-    const result = await uploadImageAction({}, formData);
-    if (result.error) {
-      toast.error(result.error);
-    } else if (result.success) {
-      setUrls((prev) =>
-        prev.map((item, idx) =>
-          idx === editingIndex ? result.success! : item,
-        ),
-      );
-      toast.success("Foto diperbarui.");
+    const index = editingIndex;
+    if (index === null) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", cropped);
+      const result = await uploadImageAction({}, formData);
+      if (result.error) {
+        toast.error(result.error);
+      } else if (result.success) {
+        const url = result.success;
+        setUrls((prev) =>
+          prev.map((item, idx) => (idx === index ? url : item)),
+        );
+        toast.success("Foto diperbarui.");
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal menyimpan hasil edit. Coba lagi.");
+    } finally {
+      if (editorSrc) URL.revokeObjectURL(editorSrc);
+      setEditorSrc(null);
+      setEditorFile(null);
+      setEditingIndex(null);
+      setEditorOpen(false);
     }
-    if (editorSrc) URL.revokeObjectURL(editorSrc);
-    setEditorSrc(null);
-    setEditorFile(null);
-    setEditingIndex(null);
-    setEditorOpen(false);
   };
 
   const remaining = max - urls.length;
@@ -369,7 +419,7 @@ export function MultiImageUploader({
             : "Tarik banyak foto ke sini atau pilih berkas"}
         </p>
         <p className="text-xs text-muted-foreground">
-          JPG, PNG, atau WEBP · maksimal {maxMb} MB/foto · {remaining} slot lagi
+          JPG, PNG, WEBP, atau HEIC · otomatis dikompres · {remaining} slot lagi
         </p>
         <Button
           type="button"
@@ -384,7 +434,7 @@ export function MultiImageUploader({
           ref={inputRef}
           type="file"
           multiple
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/*,.heic,.heif"
           className="hidden"
           onChange={(event) => {
             handleFiles(event.target.files);
@@ -393,9 +443,11 @@ export function MultiImageUploader({
         />
       </div>
       <ImageEditor
+        key={editorSrc ?? "multi-closed"}
         open={editorOpen}
         src={editorSrc}
         fileName={editorFile?.name ?? "foto.jpg"}
+        maxSizeMb={maxMb}
         onOpenChange={(open) => {
           setEditorOpen(open);
           if (!open && editorSrc) {

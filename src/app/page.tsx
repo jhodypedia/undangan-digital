@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -79,7 +80,7 @@ export default async function LandingPage() {
     settings[SITE_SETTINGS_KEYS.tagline] ??
     "Undangan digital yang berkesan, dibuat dalam hitungan menit.";
   const whatsapp = settings[SITE_SETTINGS_KEYS.contactWhatsapp];
-  const previewTemplates = templates.filter((t) => t.isActive).slice(0, 6);
+  const previewTemplates = templates.filter((t) => t.isActive);
   const sampleHref = sampleSlug ? `/u/${sampleSlug}` : "#template";
   const previewConfig = previewTemplates[0]
     ? normalizeTemplateConfig(previewTemplates[0].config)
@@ -339,43 +340,71 @@ export default async function LandingPage() {
                       key={template.id}
                       className="card-lift group overflow-hidden rounded-2xl border border-black/5 bg-[#f7f3ea]"
                     >
-                      <div
-                        className="relative flex aspect-[4/3] flex-col items-center justify-center gap-2 overflow-hidden p-6 text-center"
-                        style={{
-                          background: `linear-gradient(160deg, ${config.colors.primary}, ${config.colors.primary}dd)`,
-                        }}
-                      >
-                        <div
-                          aria-hidden
-                          className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-                          style={{
-                            background:
-                              "radial-gradient(circle at 50% 120%, rgba(255,255,255,0.25), transparent 60%)",
-                          }}
-                        />
-                        <p
-                          className="relative font-display text-2xl transition-transform duration-500 group-hover:-translate-y-1"
-                          style={{ color: config.colors.accent }}
-                        >
-                          {template.name}
-                        </p>
-                        <p className="relative text-xs text-white/60">
-                          {config.motif}
-                        </p>
+                      <div className="relative aspect-[3/4] overflow-hidden">
+                        {template.previewImage ? (
+                          <Image
+                            src={template.previewImage}
+                            alt={`Artwork tema ${template.name}`}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <div
+                            className="relative flex h-full flex-col items-center justify-center gap-2 p-6 text-center"
+                            style={{
+                              background: `linear-gradient(160deg, ${config.colors.primary}, ${config.colors.primary}dd)`,
+                            }}
+                          >
+                            <div
+                              aria-hidden
+                              className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                              style={{
+                                background:
+                                  "radial-gradient(circle at 50% 120%, rgba(255,255,255,0.25), transparent 60%)",
+                              }}
+                            />
+                            <p
+                              className="relative font-display text-2xl transition-transform duration-500 group-hover:-translate-y-1"
+                              style={{ color: config.colors.accent }}
+                            >
+                              {template.name}
+                            </p>
+                            <p className="relative text-xs text-white/60">
+                              {config.motif}
+                            </p>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center justify-between p-4">
-                        <span className="text-sm opacity-70">
-                          {template.isPremium ? "Premium" : "Gratis"}
-                        </span>
-                        <div className="flex gap-1">
+                      <div className="flex items-center justify-between gap-3 p-4">
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium">
+                            {template.name}
+                          </p>
+                          <p className="truncate text-xs opacity-60">
+                            {config.motif}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
                           <span
-                            className="size-4 rounded-full transition-transform duration-500 group-hover:scale-125"
-                            style={{ background: config.colors.primary }}
-                          />
-                          <span
-                            className="size-4 rounded-full transition-transform delay-75 duration-500 group-hover:scale-125"
-                            style={{ background: config.colors.accent }}
-                          />
+                            className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${
+                              template.isPremium
+                                ? "bg-[#0b3d2e] text-[#c9a24b]"
+                                : "bg-[#0b3d2e]/10 text-[#0b3d2e]"
+                            }`}
+                          >
+                            {template.isPremium ? "Premium" : "Gratis"}
+                          </span>
+                          <span className="flex gap-1">
+                            <span
+                              className="size-4 rounded-full transition-transform duration-500 group-hover:scale-125"
+                              style={{ background: config.colors.primary }}
+                            />
+                            <span
+                              className="size-4 rounded-full transition-transform delay-75 duration-500 group-hover:scale-125"
+                              style={{ background: config.colors.accent }}
+                            />
+                          </span>
                         </div>
                       </div>
                     </div>
