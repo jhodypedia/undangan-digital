@@ -136,6 +136,38 @@ export function frameRadiusClass(frameStyle: FrameStyle): string {
   return "rounded-[1.75rem]";
 }
 
+/**
+ * Satu sumber URL Google Fonts untuk render publik dan preview dashboard,
+ * supaya tipografi preview tidak jatuh ke font fallback.
+ */
+export function templateFontStylesheet(
+  config: Pick<
+    TemplateConfig,
+    "fontDisplay" | "fontBody" | "fontScript" | "fontAccent"
+  >,
+): string {
+  const families = Array.from(
+    new Set(
+      [
+        config.fontDisplay
+          ? `${config.fontDisplay.replace(/\s+/g, "+")}:wght@400;500;600;700`
+          : null,
+        config.fontBody
+          ? `${config.fontBody.replace(/\s+/g, "+")}:wght@300;400;500;600`
+          : null,
+        config.fontScript
+          ? `${config.fontScript.replace(/\s+/g, "+")}:wght@400`
+          : null,
+        config.fontAccent
+          ? `${config.fontAccent.replace(/\s+/g, "+")}:wght@400;500;600`
+          : null,
+      ].filter((family): family is string => Boolean(family)),
+    ),
+  ).join("&family=");
+
+  return `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
+}
+
 export function normalizeTemplateConfig(
   input: Partial<TemplateConfig> | null | undefined,
 ): TemplateConfig {

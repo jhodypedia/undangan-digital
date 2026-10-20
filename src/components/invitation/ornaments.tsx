@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import type { FrameStyle, OrnamentKey } from "@/lib/template-config";
+import type {
+  FrameStyle,
+  OrnamentKey,
+  TemplateLayout,
+} from "@/lib/template-config";
 
 /**
  * Ornamen SVG original untuk sistem template undangan.
@@ -144,6 +148,20 @@ function motifTile(motif: OrnamentKey | string, color: string): React.ReactNode 
           <path d="M20 58V36l12-8 12 8v22" strokeOpacity=".5" />
           <path d="M12 18V8M52 18V8" strokeOpacity=".7" />
           <path d="M32 20v38" strokeOpacity=".3" />
+          {/* Kamboja Bali di tengah gapura */}
+          <g transform="translate(32 43)" strokeOpacity=".85">
+            {[0, 72, 144, 216, 288].map((deg) => (
+              <ellipse
+                key={deg}
+                cx="0"
+                cy="-4.2"
+                rx="2.2"
+                ry="4.2"
+                transform={`rotate(${deg})`}
+              />
+            ))}
+            <circle r="1.4" fill={color} stroke="none" />
+          </g>
         </>
       );
     case "frangipani":
@@ -304,6 +322,66 @@ function dividerGlyph(motif: OrnamentKey | string, color: string) {
           <circle cx="24" cy="14" r="1.4" fill={color} stroke="none" />
         </>
       );
+    case "kawung":
+      return (
+        <>
+          <ellipse cx="24" cy="8" rx="7" ry="4.5" />
+          <ellipse cx="24" cy="16" rx="7" ry="4.5" />
+          <ellipse cx="14" cy="12" rx="4.5" ry="7" />
+          <ellipse cx="34" cy="12" rx="4.5" ry="7" />
+          <circle cx="24" cy="12" r="1.6" fill={color} stroke="none" />
+        </>
+      );
+    case "parang":
+      return (
+        <>
+          <path d="M5 20C13 16 12 8 24 4" />
+          <path d="M24 20C32 16 31 8 43 4" strokeOpacity=".65" />
+          <path d="M10 14c3-1 4-4 3-7M29 14c3-1 4-4 3-7" strokeOpacity=".55" />
+        </>
+      );
+    case "candi-bentar":
+      return (
+        <>
+          <path d="M5 20V11l5-5 5 5v9M33 20V11l5-5 5 5v9" />
+          <path d="M18 20V12l6-4 6 4v8" strokeOpacity=".55" />
+          <g transform="translate(24 15)">
+            {[0, 72, 144, 216, 288].map((deg) => (
+              <ellipse
+                key={deg}
+                cx="0"
+                cy="-2.4"
+                rx="1.3"
+                ry="2.4"
+                transform={`rotate(${deg})`}
+              />
+            ))}
+            <circle r="0.8" fill={color} stroke="none" />
+          </g>
+        </>
+      );
+    case "ulos":
+      return (
+        <>
+          <path d="M4 6H44M4 18H44" />
+          <path d="M7 10l5 4-5 4M18 10l5 4-5 4M29 10l5 4-5 4M40 10l5 4-5 4" strokeOpacity=".75" />
+        </>
+      );
+    case "tapis":
+      return (
+        <>
+          <path d="M4 16L9 7L14 16L19 7L24 16L29 7L34 16L39 7L44 16" />
+          <path d="M24 4L29 9L24 14L19 9Z" strokeOpacity=".6" />
+        </>
+      );
+    case "siluet-joglo":
+      return (
+        <>
+          <path d="M24 4L41 16H7Z" />
+          <path d="M12 16v5M36 16v5M7 21H41" strokeOpacity=".8" />
+          <path d="M20 21v-4M28 21v-4" strokeOpacity=".5" />
+        </>
+      );
     case "songket":
       return (
         <>
@@ -394,6 +472,42 @@ export function OrnamentDivider({
       />
     </div>
   );
+}
+
+/**
+ * Garis pemisah yang mengikuti bahasa visual layout:
+ * minimal = garis tipis, modern = batang tegas, lainnya = divider bermotif.
+ */
+export function SectionRule({
+  layout = "classic",
+  motif = "daun-emas",
+  color = "currentColor",
+  className,
+}: {
+  layout?: TemplateLayout;
+  motif?: OrnamentKey | string;
+  color?: string;
+  className?: string;
+}) {
+  if (layout === "minimal") {
+    return (
+      <span
+        aria-hidden
+        className={cn("mx-auto block h-px w-12 opacity-40", className)}
+        style={{ background: color }}
+      />
+    );
+  }
+  if (layout === "modern") {
+    return (
+      <span
+        aria-hidden
+        className={cn("block h-0.5 w-10", className)}
+        style={{ background: color }}
+      />
+    );
+  }
+  return <OrnamentDivider motif={motif} color={color} className={className} />;
 }
 
 export function CoverArch({

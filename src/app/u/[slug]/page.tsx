@@ -8,7 +8,7 @@ import { CustomInvitation } from "@/components/invitation/custom-invitation";
 import { GalleryViewer } from "@/components/invitation/gallery-viewer";
 import { InvitationScreen } from "@/components/invitation/invitation-screen";
 import { Parallax } from "@/components/invitation/parallax";
-import { OrnamentDivider } from "@/components/invitation/ornaments";
+import { SectionRule } from "@/components/invitation/ornaments";
 import { Reveal } from "@/components/invitation/reveal";
 import { RsvpForm } from "@/components/invitation/rsvp-form";
 import { ScrollAnimate } from "@/components/invitation/scroll-animate";
@@ -30,7 +30,13 @@ import {
   mapsQuery,
   resolveLatLng,
 } from "@/lib/maps";
-import { normalizeTemplateConfig, resolveOrnamentKey } from "@/lib/template-config";
+import {
+  normalizeTemplateConfig,
+  resolveOrnamentKey,
+  templateFontStylesheet,
+  type TemplateLayout,
+} from "@/lib/template-config";
+import { cn } from "@/lib/utils";
 
 function youtubeEmbedUrl(raw?: string | null) {
   if (!raw) return null;
@@ -70,7 +76,7 @@ function SectionTitle({
   fontScript?: string;
   fontAccent?: string;
   script?: boolean;
-  layout?: string;
+  layout?: TemplateLayout;
   ornamentKey?: string;
 }) {
   const isModern = layout === "modern";
@@ -95,25 +101,12 @@ function SectionTitle({
           {kicker}
         </span>
       ) : null}
-      {isMinimal ? (
-        <span
-          aria-hidden
-          className="my-3 block h-px w-12 opacity-40"
-          style={{ background: "var(--tpl-accent)" }}
-        />
-      ) : isModern ? (
-        <span
-          aria-hidden
-          className="my-3 block h-0.5 w-10"
-          style={{ background: "var(--tpl-accent)" }}
-        />
-      ) : (
-        <OrnamentDivider
-          motif={ornamentKey}
-          color="var(--tpl-accent)"
-          className="my-2"
-        />
-      )}
+      <SectionRule
+        layout={layout}
+        motif={ornamentKey}
+        color="var(--tpl-accent)"
+        className="my-2"
+      />
       <h2
         className={
           useScript
@@ -174,9 +167,14 @@ export default async function PublicInvitationPage(
     invitation.customConfig ?? template?.config,
   );
   const layout = config.layout;
+  const isModern = layout === "modern";
+  const isMinimal = layout === "minimal";
   const coverStyle = config.coverStyle;
   const frameStyle = config.frameStyle;
   const motifKey = resolveOrnamentKey(config.ornament, config.motif);
+  // Layout Jawa memakai parang sebagai pengulang ritme antar-section,
+  // sementara motif utama tetap bebas (mega-mendung, kawung, gunungan, dst.).
+  const dividerKey = layout === "javanese" ? "parang" : motifKey;
   const colors = {
     ...config.colors,
     primary: invitation.themeColor || config.colors.primary,
@@ -243,24 +241,7 @@ export default async function PublicInvitationPage(
     : "Segera";
   const liveEmbed = youtubeEmbedUrl(invitation.liveStreamUrl);
 
-  const fontFamilies = Array.from(
-    new Set(
-      [
-        config.fontDisplay
-          ? `${config.fontDisplay.replace(/\s+/g, "+")}:wght@400;500;600;700`
-          : null,
-        config.fontBody
-          ? `${config.fontBody.replace(/\s+/g, "+")}:wght@300;400;500;600`
-          : null,
-        config.fontScript
-          ? `${config.fontScript.replace(/\s+/g, "+")}:wght@400`
-          : null,
-        config.fontAccent
-          ? `${config.fontAccent.replace(/\s+/g, "+")}:wght@400;500;600`
-          : null,
-      ].filter((family): family is string => Boolean(family)),
-    ),
-  ).join("&family=");
+  const fontStylesheet = templateFontStylesheet(config);
 
   const flatGallery = galleries.filter((photo) => !photo.albumId);
   const sections = config.sections;
@@ -360,7 +341,7 @@ export default async function PublicInvitationPage(
     fontScript: config.fontScript,
     fontAccent: config.fontAccent,
     layout,
-    ornamentKey: motifKey,
+    ornamentKey: dividerKey,
   };
 
   const interactiveSections = (
@@ -426,7 +407,7 @@ export default async function PublicInvitationPage(
     <>
       <link
         rel="stylesheet"
-        href={`https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`}
+        href={fontStylesheet}
       />
       <div
         className="font-body"
@@ -496,10 +477,11 @@ export default async function PublicInvitationPage(
                       </p>
                       {invitation.quoteSource ? (
                         <>
-                          <OrnamentDivider
-                            motif={motifKey}
+                          <SectionRule
+                            layout={layout}
+                            motif={dividerKey}
                             color={colors.accent}
-                            className="mt-5"
+                            className="mx-auto mt-5"
                           />
                           <span
                             className="mt-3 block text-xs tracking-[0.3em] uppercase"
@@ -509,10 +491,11 @@ export default async function PublicInvitationPage(
                           </span>
                         </>
                       ) : (
-                        <OrnamentDivider
-                          motif={motifKey}
+                        <SectionRule
+                          layout={layout}
+                          motif={dividerKey}
                           color={colors.accent}
-                          className="mt-5"
+                          className="mx-auto mt-5"
                         />
                       )}
                     </section>
@@ -554,14 +537,16 @@ export default async function PublicInvitationPage(
                                   className="inline-block"
                                 >
                                   <div className="relative grid place-items-center">
-                                    <span
-                                      aria-hidden
-                                      className="inv-spin-ring pointer-events-none absolute -inset-3 rounded-full opacity-0 transition-opacity duration-700 group-hover:opacity-70"
-                                      style={{
-                                        background: `conic-gradient(from 0deg, transparent 0deg, ${colors.accent} 90deg, transparent 210deg)`,
-                                        filter: "blur(1px)",
-                                      }}
-                                    />
+                                    {!isMinimal ? (
+                                      <span
+                                        aria-hidden
+                                        className="inv-spin-ring pointer-events-none absolute -inset-3 rounded-full opacity-0 transition-opacity duration-700 group-hover:opacity-70"
+                                        style={{
+                                          background: `conic-gradient(from 0deg, transparent 0deg, ${colors.accent} 90deg, transparent 210deg)`,
+                                          filter: "blur(1px)",
+                                        }}
+                                      />
+                                    ) : null}
                                     {index === 0 && invitation.bridePhoto ? (
                                       <Image
                                         src={invitation.bridePhoto}
@@ -597,12 +582,25 @@ export default async function PublicInvitationPage(
                                     )}
                                   </div>
                                 </Parallax>
-                                <span className="inv-ornament mt-6 w-full max-w-[11rem]">
-                                  <Heart
-                                    className="inv-heartbeat size-3.5"
-                                    style={{ color: colors.accent }}
+                                {isModern || isMinimal ? (
+                                  <span
+                                    aria-hidden
+                                    className={cn(
+                                      "mt-6 block",
+                                      isModern
+                                        ? "h-0.5 w-10"
+                                        : "mx-auto h-px w-12 opacity-40",
+                                    )}
+                                    style={{ background: colors.accent }}
                                   />
-                                </span>
+                                ) : (
+                                  <span className="inv-ornament mt-6 w-full max-w-[11rem]">
+                                    <Heart
+                                      className="inv-heartbeat size-3.5"
+                                      style={{ color: colors.accent }}
+                                    />
+                                  </span>
+                                )}
                                 <h3
                                   className="inv-title-shine mt-1 max-w-full font-display text-2xl text-balance break-words sm:text-3xl"
                                   style={{ fontFamily: `'${config.fontDisplay}', serif` }}
@@ -1026,7 +1024,12 @@ export default async function PublicInvitationPage(
                 <section className="inv-plate p-7 text-center sm:p-8">
                   {config.fontScript ? (
                     <>
-                      <OrnamentDivider motif={motifKey} color={colors.accent} />
+                      <SectionRule
+                        layout={layout}
+                        motif={dividerKey}
+                        color={colors.accent}
+                        className="mx-auto"
+                      />
                       <p
                         className="mt-2 text-4xl leading-none sm:text-5xl"
                         style={{
@@ -1048,7 +1051,12 @@ export default async function PublicInvitationPage(
                     </>
                   ) : (
                     <>
-                      <OrnamentDivider motif={motifKey} color={colors.accent} />
+                      <SectionRule
+                        layout={layout}
+                        motif={dividerKey}
+                        color={colors.accent}
+                        className="mx-auto"
+                      />
                       <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed opacity-80">
                         {invitation.closing}
                       </p>

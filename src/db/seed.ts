@@ -263,7 +263,7 @@ const SEED_TEMPLATES: SeedTemplate[] = [
       coverStyle: "framed",
       frameStyle: "arch",
       fontDisplay: "Cormorant Garamond",
-      motif: "candi-bentar",
+      motif: "candi-bentar dan frangipani",
       ornament: "candi-bentar",
       colors: {
         primary: "#7c2d12",
@@ -364,7 +364,7 @@ const SEED_TEMPLATES: SeedTemplate[] = [
     source: "manual",
     config: theme({
       layout: "classic",
-      coverStyle: "full",
+      coverStyle: "split",
       frameStyle: "square",
       fontDisplay: "Fraunces",
       motif: "ulos",
@@ -494,7 +494,7 @@ const SEED_TEMPLATES: SeedTemplate[] = [
     source: "manual",
     config: theme({
       layout: "royal",
-      coverStyle: "framed",
+      coverStyle: "full",
       frameStyle: "arch",
       fontDisplay: "Cinzel",
       motif: "songket",
@@ -572,7 +572,7 @@ const SEED_TEMPLATES: SeedTemplate[] = [
     source: "manual",
     config: theme({
       layout: "royal",
-      coverStyle: "framed",
+      coverStyle: "split",
       frameStyle: "arch",
       fontDisplay: "Cinzel",
       motif: "songket",
@@ -698,6 +698,30 @@ async function main() {
   if (missingTemplates.length > 0) {
     await db.insert(templates).values(missingTemplates);
     console.log(`  ${missingTemplates.length} template ditambahkan.`);
+  }
+
+  // Tema lama yang dibuat sebelum field `ornament` ada tetap mendapat artwork
+  // dan aturan frame baru. Warna/font/section milik pengguna dipertahankan.
+  for (const template of SEED_TEMPLATES) {
+    if (!["royal-emerald", "midnight-slate"].includes(template.code)) continue;
+    const row = existingTemplates.find((item) => item.code === template.code);
+    if (!row) continue;
+    const current = row.config as TemplateConfig | null;
+    if (current?.ornament) continue;
+    await db
+      .update(templates)
+      .set({
+        config: {
+          ...(current ?? template.config),
+          layout: template.config.layout,
+          coverStyle: template.config.coverStyle,
+          frameStyle: template.config.frameStyle,
+          motif: template.config.motif,
+          ornament: template.config.ornament,
+        },
+      })
+      .where(eq(templates.id, row.id));
+    console.log(`  Tema ${template.name} diperbarui dengan ornament baru.`);
   }
 
   // Migrasi satu kali untuk tema Jawa Hitam lama -> Art Jawa Hitam

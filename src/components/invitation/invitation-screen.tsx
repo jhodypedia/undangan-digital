@@ -9,8 +9,8 @@ import {
   GununganOrnament,
   MotifPattern,
   MotifSilhouette,
-  OrnamentDivider,
   OrnamentFrame,
+  SectionRule,
 } from "@/components/invitation/ornaments";
 import { SectionNav } from "@/components/invitation/section-nav";
 import { ScrollProgress } from "@/components/marketing/scroll-progress";
@@ -141,7 +141,7 @@ function CoverNames({
   title,
   accent,
   layout,
-  motifKey,
+  dividerKey,
   ceremonial = false,
   color = "#ffffff",
   align = "center",
@@ -150,7 +150,7 @@ function CoverNames({
   title: string;
   accent: string;
   layout: TemplateLayout;
-  motifKey: OrnamentKey;
+  dividerKey: OrnamentKey;
   ceremonial?: boolean;
   color?: string;
   align?: "center" | "left";
@@ -224,20 +224,15 @@ function CoverNames({
         )}
       </h1>
 
-      {minimal ? (
-        <span
-          className="mt-5 h-px w-16"
-          style={{ background: `${accent}88` }}
-        />
-      ) : modern ? (
-        <span className="mt-5 h-0.5 w-12" style={{ background: accent }} />
-      ) : (
-        <OrnamentDivider
-          motif={motifKey}
-          color={accent}
-          className="mt-5 w-full max-w-[15rem]"
-        />
-      )}
+      <SectionRule
+        layout={layout}
+        motif={dividerKey}
+        color={accent}
+        className={cn(
+          "mt-5",
+          minimal ? "mx-auto" : modern ? "" : "w-full max-w-[15rem]",
+        )}
+      />
     </div>
   );
 }
@@ -349,6 +344,8 @@ export function InvitationScreen({
     layout,
   );
   const ceremonial = motifKey === "gunungan";
+  const dividerKey: OrnamentKey =
+    layout === "javanese" ? "parang" : motifKey;
 
   useEffect(() => {
     void trackOpen(slug, guestCode);
@@ -401,8 +398,10 @@ export function InvitationScreen({
     setPhase("opening");
     timerRef.current = window.setTimeout(() => {
       setPhase("open");
-      setShowConfetti(true);
-      window.setTimeout(() => setShowConfetti(false), 3200);
+      if (!isMinimal) {
+        setShowConfetti(true);
+        window.setTimeout(() => setShowConfetti(false), 3200);
+      }
       timerRef.current = null;
     }, ceremonial ? CEREMONIAL_OPEN_DURATION : OPEN_DURATION);
   };
@@ -660,7 +659,7 @@ export function InvitationScreen({
               title={title}
               accent={accent}
               layout={layout}
-              motifKey={motifKey}
+              dividerKey={dividerKey}
               ceremonial={ceremonial}
               color="#ffffff"
               align={isModern ? "left" : "center"}
@@ -740,6 +739,13 @@ export function InvitationScreen({
           />
         ) : null}
         <div className="inv-cover-vignette absolute inset-0" />
+        {layout === "javanese" ? (
+          <MotifSilhouette
+            motif="siluet-joglo"
+            color={`${accent}66`}
+            className="absolute right-4 bottom-2 z-10 h-14 w-14"
+          />
+        ) : null}
         <div className="relative z-10 flex h-full items-start justify-center px-6 pt-8">
           {!ceremonial ? (
             <div className="animate__animated animate__fadeInDown">
@@ -776,6 +782,15 @@ export function InvitationScreen({
             className="pointer-events-none absolute top-1/2 left-1/2 h-72 w-40 -translate-x-1/2 -translate-y-1/2"
           />
         ) : null}
+        {layout === "royal" ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 grid place-items-center font-display text-[9rem] leading-none opacity-[0.06]"
+            style={{ color: accent }}
+          >
+            {monogram}
+          </span>
+        ) : null}
         {showsOrnaments ? (
           <div className="pointer-events-none absolute inset-0 overflow-hidden">
             {PETALS.slice(0, 6).map((petal, index) => (
@@ -802,7 +817,7 @@ export function InvitationScreen({
               title={title}
               accent={accent}
               layout={layout}
-              motifKey={motifKey}
+              dividerKey={dividerKey}
               ceremonial={ceremonial}
               color="#ffffff"
               align={isModern ? "left" : "center"}
@@ -908,6 +923,22 @@ export function InvitationScreen({
               className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-[24rem] w-44"
             />
           ) : null}
+          {layout === "royal" ? (
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 grid place-items-center font-display text-[8rem] leading-none opacity-[0.06]"
+              style={{ color: accent }}
+            >
+              {monogram}
+            </span>
+          ) : null}
+          {layout === "javanese" ? (
+            <MotifSilhouette
+              motif="siluet-joglo"
+              color={`${accent}1f`}
+              className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-24 w-24"
+            />
+          ) : null}
           {showsOrnaments ? (
             <OrnamentFrame color={`${accent}cc`} size="size-10 sm:size-12" />
           ) : null}
@@ -953,7 +984,7 @@ export function InvitationScreen({
                 title={title}
                 accent={accent}
                 layout={layout}
-                motifKey={motifKey}
+                dividerKey={dividerKey}
                 ceremonial={ceremonial}
                 color="var(--tpl-text)"
                 align={isModern ? "left" : "center"}
@@ -1098,7 +1129,7 @@ export function InvitationScreen({
                   }}
                 />
               </>
-            ) : (
+            ) : !isMinimal ? (
               <div
                 className="absolute inset-0"
                 style={{
@@ -1107,28 +1138,32 @@ export function InvitationScreen({
                     : `radial-gradient(90% 60% at 12% 0%, color-mix(in srgb, ${primary} 16%, transparent) 0%, transparent 55%), radial-gradient(85% 60% at 90% 100%, color-mix(in srgb, ${accent} 18%, transparent) 0%, transparent 60%)`,
                 }}
               />
-            )}
-            <span
-              className="inv-orb anim-glow"
-              style={{
-                top: "-4rem",
-                left: "-4rem",
-                width: "18rem",
-                height: "18rem",
-                background: `color-mix(in srgb, ${primary} 40%, transparent)`,
-              }}
-            />
-            <span
-              className="inv-orb anim-glow"
-              style={{
-                bottom: "-5rem",
-                right: "-5rem",
-                width: "22rem",
-                height: "22rem",
-                background: `color-mix(in srgb, ${accent} 20%, transparent)`,
-                animationDelay: "1.4s",
-              }}
-            />
+            ) : null}
+            {!isMinimal ? (
+              <>
+                <span
+                  className="inv-orb anim-glow"
+                  style={{
+                    top: "-4rem",
+                    left: "-4rem",
+                    width: "18rem",
+                    height: "18rem",
+                    background: `color-mix(in srgb, ${primary} 40%, transparent)`,
+                  }}
+                />
+                <span
+                  className="inv-orb anim-glow"
+                  style={{
+                    bottom: "-5rem",
+                    right: "-5rem",
+                    width: "22rem",
+                    height: "22rem",
+                    background: `color-mix(in srgb, ${accent} 20%, transparent)`,
+                    animationDelay: "1.4s",
+                  }}
+                />
+              </>
+            ) : null}
             {showsOrnaments ? (
               <>
                 {PETALS.slice(0, isMinimal ? 0 : 8).map((petal, index) => (

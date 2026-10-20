@@ -7,8 +7,8 @@ import {
   GununganOrnament,
   MotifPattern,
   MotifSilhouette,
-  OrnamentDivider,
   OrnamentFrame,
+  SectionRule,
 } from "@/components/invitation/ornaments";
 import {
   renderCustomTemplate,
@@ -17,6 +17,7 @@ import {
 import {
   frameRadiusClass,
   resolveOrnamentKey,
+  templateFontStylesheet,
   type TemplateConfig,
 } from "@/lib/template-config";
 import { cn } from "@/lib/utils";
@@ -118,6 +119,8 @@ function Names({
 }) {
   const modern = config.layout === "modern";
   const minimal = config.layout === "minimal";
+  const ornamentKey = resolveOrnamentKey(config.ornament, config.motif);
+  const dividerKey = config.layout === "javanese" ? "parang" : ornamentKey;
   return (
     <div
       className={cn(
@@ -141,17 +144,18 @@ function Names({
       >
         Arya &amp; Aisyah
       </span>
-      {minimal ? (
-        <span className="mt-1.5 h-px w-8" style={{ background: `${accent}88` }} />
-      ) : modern ? (
-        <span className="mt-1.5 h-0.5 w-7" style={{ background: accent }} />
-      ) : (
-        <OrnamentDivider
-          motif={resolveOrnamentKey(config.ornament, config.motif)}
-          color={accent}
-          className="mt-1.5 w-full max-w-[9rem] scale-90"
-        />
-      )}
+      <SectionRule
+        layout={config.layout}
+        motif={dividerKey}
+        color={accent}
+        className={
+          minimal
+            ? "mt-1.5 mx-auto"
+            : modern
+              ? "mt-1.5"
+              : "mt-1.5 w-full max-w-[9rem] scale-90"
+        }
+      />
     </div>
   );
 }
@@ -166,6 +170,8 @@ export function TemplatePreview({
   if (!config?.colors) return null;
   const { colors } = config;
   const ornamentKey = resolveOrnamentKey(config.ornament, config.motif);
+  const dividerKey = config.layout === "javanese" ? "parang" : ornamentKey;
+  const fontStylesheet = templateFontStylesheet(config);
   const shape = frameRadiusClass(config.frameStyle);
   const frameRadius =
     config.frameStyle === "square"
@@ -185,7 +191,8 @@ export function TemplatePreview({
       ...SAMPLE_DATA,
       colors,
     });
-    const srcdoc = `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><style>body{margin:0;font-family:ui-sans-serif,system-ui,sans-serif;background:${colors.background}}</style><style>${css}</style></head><body>${html}</body></html>`;
+    const fontHref = fontStylesheet.replace(/&/g, "&amp;");
+    const srcdoc = `<!doctype html><html><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="${fontHref}"/><style>body{margin:0;font-family:'${config.fontBody}',ui-sans-serif,system-ui,sans-serif;background:${colors.background}}</style><style>${css}</style></head><body>${html}</body></html>`;
 
     return (
       <div className={cn("space-y-3", className)}>
@@ -259,7 +266,13 @@ export function TemplatePreview({
   );
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div
+      className={cn("space-y-3", className)}
+      style={{
+        fontFamily: `'${config.fontBody}', ui-sans-serif, system-ui, sans-serif`,
+      }}
+    >
+      <link rel="stylesheet" href={fontStylesheet} />
       <div
         className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[2rem] border-4 border-black/80 shadow-xl"
         style={{ background: colors.background, color: colors.text }}
@@ -272,15 +285,21 @@ export function TemplatePreview({
                 background: `radial-gradient(120% 100% at 50% 0%, ${colors.primary} 0%, color-mix(in srgb, ${colors.primary} 60%, #000 40%) 100%)`,
               }}
             >
-              {(config.layout === "javanese" ||
-                config.layout === "floral") && (
+              {ornate ? (
                 <MotifPattern
                   motif={ornamentKey}
                   color={colors.accent}
                   opacity={0.18}
                 />
-              )}
+              ) : null}
               <div className="absolute inset-0 bg-black/25" />
+              {config.layout === "javanese" ? (
+                <MotifSilhouette
+                  motif="siluet-joglo"
+                  color={`${colors.accent}66`}
+                  className="absolute right-3 bottom-1 h-8 w-8"
+                />
+              ) : null}
               <p
                 className="relative pt-4 text-center text-[7px] uppercase tracking-[0.35em]"
                 style={{ color: colors.accent }}
@@ -293,10 +312,25 @@ export function TemplatePreview({
               style={{ background: colors.primary }}
             >
               {config.layout === "royal" ? (
-                <div
-                  aria-hidden
-                  className="pointer-events-none absolute inset-1.5 rounded border"
-                  style={{ borderColor: `${colors.accent}55` }}
+                <>
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-1.5 rounded border"
+                    style={{ borderColor: `${colors.accent}55` }}
+                  />
+                  <span
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 grid place-items-center font-display text-5xl leading-none opacity-[0.06]"
+                    style={{ color: colors.accent }}
+                  >
+                    AA
+                  </span>
+                </>
+              ) : null}
+              {ceremonial ? (
+                <GununganOrnament
+                  color={`${colors.accent}30`}
+                  className="pointer-events-none absolute top-1/2 left-1/2 h-32 w-20 -translate-x-1/2 -translate-y-1/2"
                 />
               ) : null}
               <Names
@@ -345,6 +379,22 @@ export function TemplatePreview({
                 <GununganOrnament
                   color={`${colors.accent}26`}
                   className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-40 w-24"
+                />
+              ) : null}
+              {config.layout === "royal" ? (
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 grid place-items-center font-display text-6xl leading-none opacity-[0.06]"
+                  style={{ color: colors.accent }}
+                >
+                  AA
+                </span>
+              ) : null}
+              {config.layout === "javanese" ? (
+                <MotifSilhouette
+                  motif="siluet-joglo"
+                  color={`${colors.accent}22`}
+                  className="pointer-events-none absolute inset-x-0 bottom-0 mx-auto h-16 w-16"
                 />
               ) : null}
               {ornate ? (
@@ -404,14 +454,13 @@ export function TemplatePreview({
                 : `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primary}dd 60%, ${colors.primary} 100%)`,
             }}
           >
-            {(config.layout === "javanese" ||
-              config.layout === "floral") && (
+            {ornate ? (
               <MotifPattern
                 motif={ornamentKey}
                 color={colors.accent}
                 opacity={0.2}
               />
-            )}
+            ) : null}
             <div className="pointer-events-none absolute inset-0 bg-black/10" />
             {minimal ? (
               <div
@@ -462,6 +511,34 @@ export function TemplatePreview({
         )}
 
         <div className="space-y-3 p-3">
+          <div className={cn("px-1", modern ? "text-left" : "text-center")}>
+            <p
+              className="text-[6px] uppercase tracking-[0.3em]"
+              style={{ color: colors.accent }}
+            >
+              {minimal ? "Undangan" : "Dengan memohon rahmat Allah"}
+            </p>
+            <SectionRule
+              layout={config.layout}
+              motif={dividerKey}
+              color={colors.accent}
+              className={minimal ? "my-1 mx-auto" : "my-1"}
+            />
+            <p
+              className={cn(
+                "font-display",
+                minimal
+                  ? "text-[8px] uppercase tracking-[0.24em]"
+                  : "text-[10px]",
+              )}
+              style={{
+                fontFamily: `'${config.fontDisplay}', serif`,
+                color: colors.text,
+              }}
+            >
+              Mempelai
+            </p>
+          </div>
           <div className="flex gap-2">
             {[0, 1].map((index) => (
               <div
@@ -488,8 +565,9 @@ export function TemplatePreview({
             ))}
           </div>
 
-          <OrnamentDivider
-            motif={ornamentKey}
+          <SectionRule
+            layout={config.layout}
+            motif={dividerKey}
             color={colors.accent}
             className="scale-90"
           />
