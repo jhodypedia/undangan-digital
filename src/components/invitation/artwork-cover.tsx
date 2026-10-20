@@ -237,7 +237,7 @@ export function ArtworkCover({
             background: `linear-gradient(180deg, transparent 0%, color-mix(in srgb, ${primary} 55%, transparent) 38%, color-mix(in srgb, ${primary} 92%, black) 100%)`,
           }}
         />
-        <div className="relative flex flex-col items-center gap-3 px-6 pt-20 pb-7 text-center text-white">
+        <div className="relative flex flex-col items-center gap-2.5 px-6 pt-14 pb-6 text-center text-white">
           {bottom}
         </div>
       </div>
