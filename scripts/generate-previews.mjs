@@ -2,8 +2,11 @@
 /**
  * Generator artwork preview ORIGINAL untuk template undangan.
  *
- * Menghasilkan satu file SVG per template seed di `public/previews/<code>.svg`
- * dengan komposisi cover undangan portrait (600x800, rasio 3:4):
+ * Menghasilkan satu file SVG cadangan per template seed di
+ * `public/previews/<code>.svg`. Preview utama yang dipakai aplikasi adalah
+ * JPG kurasi di `public/previews/<code>.jpg`.
+ *
+ * Komposisi cover undangan portrait (600x800, rasio 3:4):
  * latar warna primer tema + pola motif SVG yang digambar prosedural,
  * bingkai arch emas, siluet khas (joglo/tongkonan/candi bentar/gunungan),
  * monogram, dan nama tema.

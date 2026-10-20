@@ -22,8 +22,13 @@ type SeedTemplate = {
   sortOrder: number;
 };
 
-/** Path artwork preview per template — dihasilkan scripts/generate-previews.mjs. */
-const previewPath = (code: string) => `/previews/${code}.svg`;
+/**
+ * Path artwork preview per template. Preview utama memakai JPG kurasi;
+ * setiap tema seed perlu menyediakan `public/previews/<code>.jpg`.
+ * SVG cadangan tetap tersedia dan dapat dibuat ulang lewat
+ * scripts/generate-previews.mjs.
+ */
+const previewPath = (code: string) => `/previews/${code}.jpg`;
 
 /** Stringify stabil (kunci terurut) untuk membandingkan config JSON. */
 function stableStringify(value: unknown): string {
