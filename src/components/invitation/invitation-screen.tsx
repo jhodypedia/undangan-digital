@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { Heart, MailOpen, Music2, Pause, Play } from "lucide-react";
+import { Heart, MailOpen, Music2, Play } from "lucide-react";
 
 import {
   CoverArch,
@@ -46,6 +46,7 @@ const SPARKLES = Array.from({ length: 16 }, (_, index) => ({
 }));
 
 const OPEN_DURATION = 1250;
+const CEREMONIAL_OPEN_DURATION = 1500;
 
 function monogramOf(title: string) {
   const parts = title.split(/\s*&\s*|\s+dan\s+/i).filter(Boolean);
@@ -141,6 +142,7 @@ function CoverNames({
   accent,
   layout,
   motifKey,
+  ceremonial = false,
   color = "#ffffff",
   align = "center",
   className,
@@ -149,6 +151,7 @@ function CoverNames({
   accent: string;
   layout: TemplateLayout;
   motifKey: OrnamentKey;
+  ceremonial?: boolean;
   color?: string;
   align?: "center" | "left";
   className?: string;
@@ -172,10 +175,19 @@ function CoverNames({
       {!minimal ? (
         <p
           className={cn(
-            "text-[11px] uppercase",
-            modern ? "tracking-[0.22em]" : "tracking-[0.4em]",
+            "text-[11px]",
+            ceremonial
+              ? "normal-case tracking-[0.22em]"
+              : modern
+                ? "uppercase tracking-[0.22em]"
+                : "uppercase tracking-[0.4em]",
           )}
-          style={{ color: accent }}
+          style={{
+            color: accent,
+            fontFamily: ceremonial
+              ? "var(--tpl-font-accent, serif)"
+              : undefined,
+          }}
         >
           The Wedding Of
         </p>
@@ -183,6 +195,7 @@ function CoverNames({
       <h1
         className={cn(
           modern ? "font-body font-semibold tracking-tight" : "font-display",
+          ceremonial ? "font-semibold" : "",
           minimal
             ? "text-xl uppercase tracking-[0.3em]"
             : "text-4xl leading-tight sm:text-5xl",
@@ -391,7 +404,7 @@ export function InvitationScreen({
       setShowConfetti(true);
       window.setTimeout(() => setShowConfetti(false), 3200);
       timerRef.current = null;
-    }, OPEN_DURATION);
+    }, ceremonial ? CEREMONIAL_OPEN_DURATION : OPEN_DURATION);
   };
 
   const toggleMusic = () => {
@@ -418,12 +431,16 @@ export function InvitationScreen({
     </p>
   );
 
+  const coverOpeningClass =
+    phase === "opening" && ceremonial ? "inv-cover-lift" : undefined;
+
   const openButton = (className?: string) => (
     <button
       type="button"
       onClick={openInvitation}
       className={cn(
         "sheen group inline-flex items-center gap-2 text-sm font-semibold transition-transform hover:scale-105",
+        "animate__animated animate__bounceIn",
         ceremonial
           ? "rounded-none border-y-2 px-8 py-3 font-display tracking-[0.24em] uppercase"
           : "rounded-full px-7 py-3.5 shadow-2xl",
@@ -431,8 +448,19 @@ export function InvitationScreen({
       )}
       style={
         ceremonial
-          ? { background: "transparent", color: accent, borderColor: accent }
-          : { background: accent, color: primary }
+          ? {
+              background: "transparent",
+              color: accent,
+              borderColor: accent,
+              animationDelay: "0.85s",
+              animationFillMode: "backwards",
+            }
+          : {
+              background: accent,
+              color: primary,
+              animationDelay: "0.55s",
+              animationFillMode: "backwards",
+            }
       }
     >
       {ceremonial ? (
@@ -445,7 +473,12 @@ export function InvitationScreen({
   );
 
   const coverFull = (
-    <div className="fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 overflow-hidden">
+    <div
+      className={cn(
+        "fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 overflow-hidden",
+        coverOpeningClass,
+      )}
+    >
       <div className="inv-zoom-out absolute inset-0">
         {coverImage ? (
           <div
@@ -456,7 +489,9 @@ export function InvitationScreen({
           <div
             className="absolute inset-0"
             style={{
-              background: `radial-gradient(120% 90% at 50% 10%, ${primary} 0%, color-mix(in srgb, ${primary} 65%, #000 35%) 100%)`,
+              background: ceremonial
+                ? `radial-gradient(120% 90% at 50% 8%, #24180f 0%, ${primary} 48%, #070605 100%), radial-gradient(55% 35% at 50% 105%, #5f160c 0%, transparent 72%)`
+                : `radial-gradient(120% 90% at 50% 10%, ${primary} 0%, color-mix(in srgb, ${primary} 65%, #000 35%) 100%)`,
             }}
           />
         )}
@@ -464,9 +499,18 @@ export function InvitationScreen({
           <MotifPattern
             motif={motifKey}
             color={accent}
-            opacity={layout === "javanese" ? 0.22 : 0.15}
+            opacity={layout === "javanese" ? (ceremonial ? 0.28 : 0.22) : 0.15}
           />
         )}
+        {ceremonial ? (
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(75% 45% at 50% 112%, rgba(95,22,12,0.82) 0%, transparent 68%)",
+            }}
+          />
+        ) : null}
         <div className="inv-cover-vignette absolute inset-0" />
       </div>
 
@@ -494,12 +538,17 @@ export function InvitationScreen({
           <div
             aria-hidden
             className="pointer-events-none absolute inset-3 border"
-            style={{ borderColor: `${accent}55` }}
+            style={{
+              borderColor: ceremonial ? accent : `${accent}55`,
+              borderWidth: ceremonial ? 2 : 1,
+            }}
           />
           <div
             aria-hidden
             className="pointer-events-none absolute inset-5 border"
-            style={{ borderColor: `${accent}22` }}
+            style={{
+              borderColor: ceremonial ? "rgba(255,255,255,0.34)" : `${accent}22`,
+            }}
           />
           <div className="pointer-events-none absolute inset-0 z-10">
             <OrnamentFrame color={`${accent}cc`} size="size-12 sm:size-14" />
@@ -553,7 +602,11 @@ export function InvitationScreen({
           isModern ? "items-start text-left" : "items-center text-center",
         )}
       >
-        {subtitleNode}
+        {!ceremonial ? (
+          <div className="animate__animated animate__fadeInDown">
+            {subtitleNode}
+          </div>
+        ) : null}
 
         <div
           className={cn(
@@ -563,8 +616,8 @@ export function InvitationScreen({
         >
           {ceremonial ? (
             <GununganOrnament
-              color={`${accent}38`}
-              className="absolute top-1/2 left-1/2 -z-10 h-[26rem] w-52 -translate-x-1/2 -translate-y-1/2"
+              color={`${accent}20`}
+              className="absolute top-1/2 left-1/2 -z-10 h-[27rem] w-56 -translate-x-1/2 -translate-y-1/2"
             />
           ) : null}
 
@@ -578,43 +631,68 @@ export function InvitationScreen({
             </span>
           ) : null}
 
-          <div className="anim-pop">
-            <CoverPhotoFrame
-              src={coverPhoto}
+          <div
+            className="animate__animated animate__zoomIn"
+            style={{ animationDelay: "0.08s", animationDuration: "1s" }}
+          >
+            {ceremonial ? (
+              <GununganOrnament
+                color={`${accent}d9`}
+                className="h-40 w-28 sm:h-44 sm:w-32"
+              />
+            ) : (
+              <CoverPhotoFrame
+                src={coverPhoto}
+                title={title}
+                accent={accent}
+                frameStyle={frameStyle}
+                layout={layout}
+                monogram={monogram}
+              />
+            )}
+          </div>
+
+          <div
+            className="animate__animated animate__fadeInUp"
+            style={{ animationDelay: "0.28s", animationDuration: "1s" }}
+          >
+            <CoverNames
               title={title}
               accent={accent}
-              frameStyle={frameStyle}
               layout={layout}
-              monogram={monogram}
+              motifKey={motifKey}
+              ceremonial={ceremonial}
+              color="#ffffff"
+              align={isModern ? "left" : "center"}
+              className={ceremonial ? "mt-5" : "mt-8"}
             />
           </div>
 
-          <CoverNames
-            title={title}
-            accent={accent}
-            layout={layout}
-            motifKey={motifKey}
-            color="#ffffff"
-            align={isModern ? "left" : "center"}
-            className="mt-8"
-          />
-
           <p
             className={cn(
-              "mt-4 text-sm tracking-wide",
+              "animate__animated animate__fadeInUp mt-4 text-sm tracking-wide",
               isMinimal ? "text-xs uppercase tracking-[0.25em]" : "",
             )}
-            style={{ color: "rgba(255,255,255,0.85)" }}
+            style={{
+              color: "rgba(255,255,255,0.85)",
+              animationDelay: "0.48s",
+              animationDuration: "1s",
+            }}
           >
             {dateLabel}
           </p>
 
           {guestName ? (
-            <GuestBox
-              name={guestName}
-              accent={accent}
-              variant={ceremonial ? "bare" : "dark"}
-            />
+            <div
+              className="animate__animated animate__fadeInUp"
+              style={{ animationDelay: "0.62s", animationDuration: "1s" }}
+            >
+              <GuestBox
+                name={guestName}
+                accent={accent}
+                variant={ceremonial ? "bare" : "dark"}
+              />
+            </div>
           ) : null}
         </div>
 
@@ -634,7 +712,12 @@ export function InvitationScreen({
   );
 
   const coverSplit = (
-    <div className="fixed inset-y-0 left-1/2 z-50 flex w-full max-w-[480px] -translate-x-1/2 flex-col overflow-hidden">
+    <div
+      className={cn(
+        "fixed inset-y-0 left-1/2 z-50 flex w-full max-w-[480px] -translate-x-1/2 flex-col overflow-hidden",
+        coverOpeningClass,
+      )}
+    >
       <div className="relative h-[44%] w-full shrink-0 overflow-hidden">
         {coverImage ? (
           <div
@@ -658,7 +741,11 @@ export function InvitationScreen({
         ) : null}
         <div className="inv-cover-vignette absolute inset-0" />
         <div className="relative z-10 flex h-full items-start justify-center px-6 pt-8">
-          {subtitleNode}
+          {!ceremonial ? (
+            <div className="animate__animated animate__fadeInDown">
+              {subtitleNode}
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -707,28 +794,40 @@ export function InvitationScreen({
         ) : null}
 
         <div className="relative flex flex-1 flex-col justify-center">
-          <CoverNames
-            title={title}
-            accent={accent}
-            layout={layout}
-            motifKey={motifKey}
-            color="#ffffff"
-            align={isModern ? "left" : "center"}
-          />
+          <div
+            className="animate__animated animate__fadeInUp"
+            style={{ animationDelay: "0.22s", animationDuration: "1s" }}
+          >
+            <CoverNames
+              title={title}
+              accent={accent}
+              layout={layout}
+              motifKey={motifKey}
+              ceremonial={ceremonial}
+              color="#ffffff"
+              align={isModern ? "left" : "center"}
+            />
+          </div>
           <p
             className={cn(
-              "mt-4 text-sm tracking-wide text-white/85",
+              "animate__animated animate__fadeInUp mt-4 text-sm tracking-wide text-white/85",
               isMinimal ? "text-xs uppercase tracking-[0.25em]" : "",
             )}
+            style={{ animationDelay: "0.4s", animationDuration: "1s" }}
           >
             {dateLabel}
           </p>
           {guestName ? (
-            <GuestBox
-              name={guestName}
-              accent={accent}
-              variant={ceremonial ? "bare" : "dark"}
-            />
+            <div
+              className="animate__animated animate__fadeInUp"
+              style={{ animationDelay: "0.55s", animationDuration: "1s" }}
+            >
+              <GuestBox
+                name={guestName}
+                accent={accent}
+                variant={ceremonial ? "bare" : "dark"}
+              />
+            </div>
           ) : null}
         </div>
 
@@ -749,7 +848,10 @@ export function InvitationScreen({
 
   const coverFramed = (
     <div
-      className="fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 overflow-y-auto"
+      className={cn(
+        "fixed inset-y-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 overflow-y-auto",
+        coverOpeningClass,
+      )}
       style={{ background: "var(--tpl-background)", color: "var(--tpl-text)" }}
     >
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -818,40 +920,66 @@ export function InvitationScreen({
           ) : null}
 
           <div className="relative flex flex-col items-center">
-            {subtitleNode}
-            <div className="anim-pop mt-6">
-              <CoverPhotoFrame
-                src={coverPhoto}
+            {!ceremonial ? (
+              <div className="animate__animated animate__fadeInDown">
+                {subtitleNode}
+              </div>
+            ) : null}
+            <div
+              className="animate__animated animate__zoomIn mt-6"
+              style={{ animationDelay: "0.1s", animationDuration: "1s" }}
+            >
+              {ceremonial ? (
+                <GununganOrnament
+                  color={`${accent}d9`}
+                  className="h-36 w-24"
+                />
+              ) : (
+                <CoverPhotoFrame
+                  src={coverPhoto}
+                  title={title}
+                  accent={accent}
+                  frameStyle={frameStyle}
+                  layout={layout}
+                  monogram={monogram}
+                />
+              )}
+            </div>
+            <div
+              className="animate__animated animate__fadeInUp"
+              style={{ animationDelay: "0.28s", animationDuration: "1s" }}
+            >
+              <CoverNames
                 title={title}
                 accent={accent}
-                frameStyle={frameStyle}
                 layout={layout}
-                monogram={monogram}
+                motifKey={motifKey}
+                ceremonial={ceremonial}
+                color="var(--tpl-text)"
+                align={isModern ? "left" : "center"}
+                className={cn("mt-7", isModern ? "w-full" : "")}
               />
             </div>
-            <CoverNames
-              title={title}
-              accent={accent}
-              layout={layout}
-              motifKey={motifKey}
-              color="var(--tpl-text)"
-              align={isModern ? "left" : "center"}
-              className={cn("mt-7", isModern ? "w-full" : "")}
-            />
             <p
               className={cn(
-                "mt-4 text-sm tracking-wide opacity-80",
+                "animate__animated animate__fadeInUp mt-4 text-sm tracking-wide opacity-80",
                 isMinimal ? "text-xs uppercase tracking-[0.25em]" : "",
               )}
+              style={{ animationDelay: "0.46s", animationDuration: "1s" }}
             >
               {dateLabel}
             </p>
             {guestName ? (
-              <GuestBox
-                name={guestName}
-                accent={accent}
-                variant={ceremonial ? "bare" : "light"}
-              />
+              <div
+                className="animate__animated animate__fadeInUp"
+                style={{ animationDelay: "0.6s", animationDuration: "1s" }}
+              >
+                <GuestBox
+                  name={guestName}
+                  accent={accent}
+                  variant={ceremonial ? "bare" : "light"}
+                />
+              </div>
             ) : null}
             <div className="mt-7">{openButton()}</div>
             <p className="mt-4 text-[11px] opacity-55">
@@ -974,7 +1102,9 @@ export function InvitationScreen({
               <div
                 className="absolute inset-0"
                 style={{
-                  background: `radial-gradient(90% 60% at 12% 0%, color-mix(in srgb, ${primary} 16%, transparent) 0%, transparent 55%), radial-gradient(85% 60% at 90% 100%, color-mix(in srgb, ${accent} 18%, transparent) 0%, transparent 60%)`,
+                  background: ceremonial
+                    ? `radial-gradient(90% 55% at 12% 0%, color-mix(in srgb, ${primary} 28%, transparent) 0%, transparent 55%), radial-gradient(90% 55% at 90% 100%, rgba(95,22,12,0.55) 0%, transparent 62%), radial-gradient(70% 40% at 50% 50%, color-mix(in srgb, ${accent} 8%, transparent) 0%, transparent 72%)`
+                    : `radial-gradient(90% 60% at 12% 0%, color-mix(in srgb, ${primary} 16%, transparent) 0%, transparent 55%), radial-gradient(85% 60% at 90% 100%, color-mix(in srgb, ${accent} 18%, transparent) 0%, transparent 60%)`,
                 }}
               />
             )}
@@ -1013,22 +1143,24 @@ export function InvitationScreen({
                     }}
                   />
                 ))}
-                {HEARTS.map((heart, index) => (
-                  <Heart
-                    key={`heart-${index}`}
-                    className="inv-float-heart"
-                    style={
-                      {
-                        left: `${heart.left}%`,
-                        width: heart.size,
-                        height: heart.size,
-                        animationDelay: `${heart.delay}s`,
-                        animationDuration: `${heart.duration}s`,
-                        "--h-scale": heart.scale,
-                      } as React.CSSProperties
-                    }
-                  />
-                ))}
+                {!ceremonial
+                  ? HEARTS.map((heart, index) => (
+                      <Heart
+                        key={`heart-${index}`}
+                        className="inv-float-heart"
+                        style={
+                          {
+                            left: `${heart.left}%`,
+                            width: heart.size,
+                            height: heart.size,
+                            animationDelay: `${heart.delay}s`,
+                            animationDuration: `${heart.duration}s`,
+                            "--h-scale": heart.scale,
+                          } as React.CSSProperties
+                        }
+                      />
+                    ))
+                  : null}
                 {SPARKLES.map((sparkle, index) => (
                   <span
                     key={`sparkle-${index}`}
@@ -1067,6 +1199,7 @@ export function InvitationScreen({
           <div
             className={cn(
               "anim-page inv-layout-" + layout,
+              ceremonial ? "inv-ceremonial" : "",
               "mx-auto w-full max-w-[480px] px-4 pt-10 pb-28 sm:px-5",
               backgroundImage ? "inv-text-contrast-glow" : "",
             )}
@@ -1109,7 +1242,10 @@ export function InvitationScreen({
                 aria-label={playing ? "Jeda musik" : "Putar musik"}
               >
                 {playing ? (
-                  <Pause className="size-5" />
+                  <Music2
+                    className="anim-spin-slow size-5"
+                    style={{ animationDuration: "4s" }}
+                  />
                 ) : (
                   <Play className="size-5" />
                 )}
@@ -1119,13 +1255,19 @@ export function InvitationScreen({
                     style={{ borderColor: accent }}
                   />
                 ) : null}
+                {playing && ceremonial ? (
+                  <span
+                    className="anim-spin-slow pointer-events-none absolute -inset-1.5 rounded-full border border-dashed"
+                    style={{ borderColor: `${accent}88` }}
+                  />
+                ) : null}
               </button>
             </div>
           ) : null}
         </>
       ) : null}
 
-      {phase === "cover"
+      {phase === "cover" || (phase === "opening" && ceremonial)
         ? coverStyle === "split"
           ? coverSplit
           : coverStyle === "framed"
@@ -1133,7 +1275,7 @@ export function InvitationScreen({
             : coverFull
         : null}
 
-      {phase === "opening" ? (
+      {phase === "opening" && !ceremonial ? (
         <div className="fixed inset-y-0 left-1/2 z-[60] w-full max-w-[480px] -translate-x-1/2 overflow-hidden">
           <div
             className="inv-curtain-left absolute inset-y-0 left-0 w-1/2"

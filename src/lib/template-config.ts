@@ -55,6 +55,10 @@ export type TemplateConfig = {
   frameStyle: FrameStyle;
   fontDisplay: string;
   fontBody: string;
+  /** Optional decorative script font, e.g. for ceremonial section titles. */
+  fontScript?: string;
+  /** Optional serif font for small labels, buttons, and captions. */
+  fontAccent?: string;
   colors: {
     primary: string;
     accent: string;
@@ -144,6 +148,8 @@ export function normalizeTemplateConfig(
     fontDisplay:
       source.fontDisplay ?? DEFAULT_TEMPLATE_CONFIG.fontDisplay,
     fontBody: source.fontBody ?? DEFAULT_TEMPLATE_CONFIG.fontBody,
+    fontScript: source.fontScript?.trim() || undefined,
+    fontAccent: source.fontAccent?.trim() || undefined,
     colors,
     motif: source.motif ?? DEFAULT_TEMPLATE_CONFIG.motif,
     ornament: resolveOrnamentKey(source.ornament, source.motif),

@@ -27,6 +27,9 @@ function theme(options: {
   coverStyle: TemplateConfig["coverStyle"];
   frameStyle: TemplateConfig["frameStyle"];
   fontDisplay: string;
+  fontBody?: string;
+  fontScript?: string;
+  fontAccent?: string;
   motif: string;
   ornament: NonNullable<TemplateConfig["ornament"]>;
   colors: {
@@ -43,7 +46,9 @@ function theme(options: {
     coverStyle: options.coverStyle,
     frameStyle: options.frameStyle,
     fontDisplay: options.fontDisplay,
-    fontBody: "Plus Jakarta Sans",
+    fontBody: options.fontBody ?? "Plus Jakarta Sans",
+    fontScript: options.fontScript,
+    fontAccent: options.fontAccent,
     motif: options.motif,
     ornament: options.ornament,
     colors: {
@@ -199,9 +204,12 @@ const SEED_TEMPLATES: SeedTemplate[] = [
     source: "manual",
     config: theme({
       layout: "javanese",
-      coverStyle: "framed",
+      coverStyle: "full",
       frameStyle: "arch",
       fontDisplay: "Playfair Display",
+      fontBody: "Poppins",
+      fontScript: "Pinyon Script",
+      fontAccent: "Cormorant Garamond",
       motif: "gunungan dan parang",
       ornament: "gunungan",
       colors: {
@@ -680,6 +688,7 @@ async function main() {
       id: templates.id,
       code: templates.code,
       name: templates.name,
+      config: templates.config,
     })
     .from(templates);
   const existingCodes = new Set(existingTemplates.map((row) => row.code));
@@ -692,14 +701,20 @@ async function main() {
   }
 
   // Migrasi satu kali untuk tema Jawa Hitam lama -> Art Jawa Hitam
-  // (dark ceremonial). Setelah nama berubah, blok ini tidak berjalan lagi.
+  // (dark ceremonial). Setelah nama/config berubah, blok ini tidak berjalan lagi.
   const ceremonial = SEED_TEMPLATES.find(
     (template) => template.code === "jawa-hitam",
   );
-  const legacyCeremonial = existingTemplates.find(
-    (row) => row.code === "jawa-hitam" && row.name !== ceremonial?.name,
+  const ceremonialRow = existingTemplates.find(
+    (row) => row.code === "jawa-hitam",
   );
-  if (ceremonial && legacyCeremonial) {
+  const ceremonialConfig = ceremonialRow?.config as TemplateConfig | null;
+  const refineCeremonial =
+    Boolean(ceremonial && ceremonialRow) &&
+    (ceremonialRow?.name !== ceremonial?.name ||
+      ceremonialConfig?.coverStyle !== ceremonial?.config.coverStyle ||
+      ceremonialConfig?.fontScript !== ceremonial?.config.fontScript);
+  if (ceremonial && ceremonialRow && refineCeremonial) {
     await db
       .update(templates)
       .set({
@@ -709,8 +724,8 @@ async function main() {
         accentColor: ceremonial.accentColor,
         config: ceremonial.config,
       })
-      .where(eq(templates.id, legacyCeremonial.id));
-    console.log("  Tema Jawa Hitam diperbarui ke Art Jawa Hitam.");
+      .where(eq(templates.id, ceremonialRow.id));
+    console.log("  Tema Art Jawa Hitam diselaraskan dengan gaya ceremonial terbaru.");
   }
 
   console.log(`  Total template tersedia: ${existingTemplates.length + missingTemplates.length}.`);

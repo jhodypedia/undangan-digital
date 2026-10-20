@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { CalendarDays, Gift, Heart, MapPin, Quote } from "lucide-react";
+import { CalendarDays, Gift, Heart, MapPin, Quote, Video } from "lucide-react";
 
 import { CopyButton } from "@/components/invitation/copy-button";
 import { Countdown } from "@/components/invitation/countdown";
@@ -11,6 +11,7 @@ import { Parallax } from "@/components/invitation/parallax";
 import { OrnamentDivider } from "@/components/invitation/ornaments";
 import { Reveal } from "@/components/invitation/reveal";
 import { RsvpForm } from "@/components/invitation/rsvp-form";
+import { ScrollAnimate } from "@/components/invitation/scroll-animate";
 import { WishForm } from "@/components/invitation/wish-form";
 import { SITE_SETTINGS_KEYS, GIFT_TYPE_LABELS } from "@/lib/constants";
 import { getEffectiveRole } from "@/lib/auth";
@@ -31,27 +32,65 @@ import {
 } from "@/lib/maps";
 import { normalizeTemplateConfig, resolveOrnamentKey } from "@/lib/template-config";
 
+function youtubeEmbedUrl(raw?: string | null) {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.hostname.includes("youtu.be")) {
+      const id = url.pathname.split("/").filter(Boolean)[0];
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    if (url.hostname.includes("youtube.com")) {
+      const id =
+        url.searchParams.get("v") ??
+        (url.pathname.startsWith("/live/") || url.pathname.startsWith("/embed/")
+          ? url.pathname.split("/").filter(Boolean).pop()
+          : null);
+      return id ? `https://www.youtube.com/embed/${id}` : null;
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
 function SectionTitle({
   kicker,
   title,
   fontDisplay,
+  fontScript,
+  fontAccent,
+  script = false,
   layout = "classic",
   ornamentKey = "daun-emas",
 }: {
   kicker?: string;
   title: string;
   fontDisplay?: string;
+  fontScript?: string;
+  fontAccent?: string;
+  script?: boolean;
   layout?: string;
   ornamentKey?: string;
 }) {
   const isModern = layout === "modern";
   const isMinimal = layout === "minimal";
+  const ceremonial = Boolean(fontScript || fontAccent);
+  const useScript = ceremonial && script;
   return (
-    <div className={isModern ? "text-left" : "text-center"}>
+    <ScrollAnimate animation="fadeInUp" delay={80} duration={0.9}>
+      <div className={isModern ? "text-left" : "text-center"}>
       {kicker ? (
         <span
-          className="text-[11px] uppercase tracking-[0.35em]"
-          style={{ color: "var(--tpl-accent)" }}
+          className={
+            ceremonial
+              ? "text-xs tracking-[0.2em] normal-case"
+              : "text-[11px] uppercase tracking-[0.35em]"
+          }
+          style={{
+            color: "var(--tpl-accent)",
+            fontFamily: fontAccent ? `'${fontAccent}', serif` : undefined,
+          }}
         >
           {kicker}
         </span>
@@ -77,19 +116,34 @@ function SectionTitle({
       )}
       <h2
         className={
-          isMinimal
-            ? "font-display text-base uppercase tracking-[0.3em]"
-            : isModern
-              ? "font-body text-2xl font-semibold tracking-tight sm:text-3xl"
-              : "inv-title-shine font-display text-2xl sm:text-3xl"
+          useScript
+            ? "text-4xl leading-[1.05] sm:text-5xl"
+            : isMinimal
+              ? "font-display text-base uppercase tracking-[0.3em]"
+              : isModern
+                ? "font-body text-2xl font-semibold tracking-tight sm:text-3xl"
+                : ceremonial
+                  ? "font-display text-2xl sm:text-3xl"
+                  : "inv-title-shine font-display text-2xl sm:text-3xl"
         }
         style={
-          isModern ? undefined : { fontFamily: `'${fontDisplay}', serif` }
+          useScript
+            ? {
+                fontFamily: `'${fontScript}', cursive`,
+                color: "var(--tpl-text)",
+              }
+            : isModern
+              ? undefined
+              : {
+                  fontFamily: `'${fontDisplay}', serif`,
+                  color: ceremonial ? "var(--tpl-text)" : undefined,
+                }
         }
       >
         {title}
       </h2>
-    </div>
+      </div>
+    </ScrollAnimate>
   );
 }
 
@@ -144,6 +198,11 @@ export default async function PublicInvitationPage(
   const guest = codeParam ? await getGuestByCode(codeParam) : null;
   const validGuest =
     guest && guest.invitationId === invitation.id ? guest : null;
+  // `?to=` tetap mendukung kode tamu; jika bukan kode terdaftar, tampilkan
+  // sebagai nama tamu saja agar tautan gaya `?to=Nama+Tamu` tetap bekerja.
+  const guestLabel =
+    validGuest?.name ??
+    (codeParam ? codeParam.trim().slice(0, 80) || undefined : undefined);
 
   const ownerRole = getEffectiveRole(owner);
   const showWatermark =
@@ -182,11 +241,26 @@ export default async function PublicInvitationPage(
   const dateLabel = invitation.eventDate
     ? formatDateID(invitation.eventDate)
     : "Segera";
+  const liveEmbed = youtubeEmbedUrl(invitation.liveStreamUrl);
 
-  const fontFamilies = [config.fontDisplay, config.fontBody]
-    .filter(Boolean)
-    .map((family) => family.replace(/\s+/g, "+"))
-    .join("&family=");
+  const fontFamilies = Array.from(
+    new Set(
+      [
+        config.fontDisplay
+          ? `${config.fontDisplay.replace(/\s+/g, "+")}:wght@400;500;600;700`
+          : null,
+        config.fontBody
+          ? `${config.fontBody.replace(/\s+/g, "+")}:wght@300;400;500;600`
+          : null,
+        config.fontScript
+          ? `${config.fontScript.replace(/\s+/g, "+")}:wght@400`
+          : null,
+        config.fontAccent
+          ? `${config.fontAccent.replace(/\s+/g, "+")}:wght@400;500;600`
+          : null,
+      ].filter((family): family is string => Boolean(family)),
+    ),
+  ).join("&family=");
 
   const flatGallery = galleries.filter((photo) => !photo.albumId);
   const sections = config.sections;
@@ -252,6 +326,11 @@ export default async function PublicInvitationPage(
           enabled: sections.includes("events") && events.length > 0,
         },
         {
+          id: "live",
+          label: "Live",
+          enabled: Boolean(invitation.liveStreamUrl),
+        },
+        {
           id: "gallery",
           label: "Galeri",
           enabled:
@@ -278,6 +357,8 @@ export default async function PublicInvitationPage(
         : "rounded-[2rem]";
   const sectionTitleProps = {
     fontDisplay: config.fontDisplay,
+    fontScript: config.fontScript,
+    fontAccent: config.fontAccent,
     layout,
     ornamentKey: motifKey,
   };
@@ -292,13 +373,13 @@ export default async function PublicInvitationPage(
               title="Konfirmasi Kehadiran"
               {...sectionTitleProps}
             />
-            <div className={plate}>
+            <ScrollAnimate animation="fadeInUp" delay={100} className={plate}>
               <RsvpForm
                 invitationId={invitation.id}
                 guestId={validGuest?.id}
                 defaultName={validGuest?.name}
               />
-            </div>
+            </ScrollAnimate>
           </section>
         </Reveal>
       ) : null}
@@ -309,24 +390,30 @@ export default async function PublicInvitationPage(
             <SectionTitle
               kicker="Doa & harapan"
               title="Ucapan"
+              script
               {...sectionTitleProps}
             />
-            <div className={plate}>
+            <ScrollAnimate animation="fadeInUp" delay={100} className={plate}>
               <WishForm
                 invitationId={invitation.id}
                 guestId={validGuest?.id}
                 defaultName={validGuest?.name}
               />
-            </div>
+            </ScrollAnimate>
             <div className="space-y-3">
-              {wishes.map((wish) => (
-                <div key={wish.id} className="inv-plate-soft p-4">
+              {wishes.map((wish, index) => (
+                <ScrollAnimate
+                  key={wish.id}
+                  animation="fadeInUp"
+                  delay={index * 80}
+                  className="inv-plate-soft p-4"
+                >
                   <p className="flex items-center gap-2 text-sm font-medium">
                     <Heart className="size-3.5" style={{ color: colors.accent }} />
                     {wish.name}
                   </p>
                   <p className="mt-1 text-sm opacity-80">{wish.message}</p>
-                </div>
+                </ScrollAnimate>
               ))}
             </div>
           </section>
@@ -350,6 +437,13 @@ export default async function PublicInvitationPage(
             "--tpl-background": colors.background,
             "--tpl-surface": colors.surface,
             "--tpl-text": colors.text,
+            "--tpl-font-script": config.fontScript
+              ? `'${config.fontScript}', cursive`
+              : "inherit",
+            "--tpl-font-accent": config.fontAccent
+              ? `'${config.fontAccent}', serif`
+              : "inherit",
+            "--tpl-deep": "#5f160c",
             fontFamily: `'${config.fontBody}', ui-sans-serif, system-ui, sans-serif`,
           } as React.CSSProperties
         }
@@ -357,7 +451,7 @@ export default async function PublicInvitationPage(
         <InvitationScreen
           slug={slug}
           guestCode={validGuest?.code}
-          guestName={validGuest?.name}
+          guestName={guestLabel}
           coverImage={invitation.coverImage}
           coverPhoto={invitation.coverPhoto}
           title={coupleTitle}
@@ -387,7 +481,7 @@ export default async function PublicInvitationPage(
             ) : (
               <>
                 {sections.includes("quote") && invitation.quote ? (
-                  <Reveal>
+                  <Reveal animation="zoomIn">
                     <section className="inv-plate p-7 text-center sm:p-8">
                       <Quote
                         aria-hidden
@@ -449,8 +543,10 @@ export default async function PublicInvitationPage(
                         {[invitation.brideName, invitation.groomName].map(
                           (name, index) =>
                             name ? (
-                              <div
+                              <ScrollAnimate
                                 key={index}
+                                animation="zoomIn"
+                                delay={index * 140}
                                 className="group relative flex flex-col items-center"
                               >
                                 <Parallax
@@ -542,7 +638,7 @@ export default async function PublicInvitationPage(
                                     @{invitation.groomInstagram}
                                   </a>
                                 ) : null}
-                              </div>
+                              </ScrollAnimate>
                             ) : null,
                         )}
                       </div>
@@ -561,7 +657,9 @@ export default async function PublicInvitationPage(
                         title="Hitung Hari"
                         {...sectionTitleProps}
                       />
-                      <Countdown target={invitation.eventDate.toISOString()} />
+                      <ScrollAnimate animation="zoomIn" duration={0.9}>
+                        <Countdown target={invitation.eventDate.toISOString()} />
+                      </ScrollAnimate>
                     </section>
                   </Reveal>
                 ) : null}
@@ -575,7 +673,7 @@ export default async function PublicInvitationPage(
                         {...sectionTitleProps}
                       />
                       <div className="grid gap-5 sm:grid-cols-2">
-                        {events.map((event) => {
+                        {events.map((event, index) => {
                           const coords = resolveLatLng(
                             event.latitude,
                             event.longitude,
@@ -595,7 +693,12 @@ export default async function PublicInvitationPage(
                               query,
                             }) ?? event.mapsUrl;
                           return (
-                            <div key={event.id} className="inv-plate-soft card-lift p-5">
+                            <ScrollAnimate
+                              key={event.id}
+                              animation="fadeInUp"
+                              delay={index * 110}
+                              className="inv-plate-soft card-lift p-5"
+                            >
                               <p className="text-center font-display text-xl">
                                 {event.name}
                               </p>
@@ -656,7 +759,7 @@ export default async function PublicInvitationPage(
                                   <MapPin className="size-3.5" /> Buka di Google Maps
                                 </a>
                               ) : null}
-                            </div>
+                            </ScrollAnimate>
                           );
                         })}
                       </div>
@@ -701,12 +804,64 @@ export default async function PublicInvitationPage(
                   </Reveal>
                 ) : null}
 
+                {invitation.liveStreamUrl ? (
+                  <Reveal animation="fadeInUp">
+                    <section id="live" className="inv-plate space-y-6 p-6 sm:p-7">
+                      <SectionTitle
+                        kicker="Saksikan dari mana saja"
+                        title="Live Streaming"
+                        {...sectionTitleProps}
+                      />
+                      <ScrollAnimate
+                        animation="zoomIn"
+                        delay={80}
+                        className="inv-plate-soft overflow-hidden p-4"
+                      >
+                        {liveEmbed ? (
+                          <div
+                            className="overflow-hidden rounded-xl border"
+                            style={{
+                              borderColor: `color-mix(in srgb, ${colors.accent} 35%, transparent)`,
+                            }}
+                          >
+                            <iframe
+                              src={liveEmbed}
+                              title="Live streaming pernikahan"
+                              loading="lazy"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              className="aspect-video w-full"
+                            />
+                          </div>
+                        ) : null}
+                        <a
+                          href={invitation.liveStreamUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="mt-4 inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+                          style={{
+                            background: colors.accent,
+                            color: colors.primary,
+                          }}
+                        >
+                          <Video className="size-4" /> Buka Live Streaming
+                        </a>
+                        <p className="mt-3 text-xs opacity-60">
+                          Kami menantikan kehadiran Anda secara langsung maupun
+                          daring.
+                        </p>
+                      </ScrollAnimate>
+                    </section>
+                  </Reveal>
+                ) : null}
+
                 {sections.includes("story") && stories.length > 0 ? (
                   <Reveal>
-                    <section className="inv-plate space-y-6 p-7 sm:p-8">
+                    <section id="story" className="inv-plate space-y-6 p-7 sm:p-8">
                       <SectionTitle
                         kicker="Perjalanan kami"
                         title="Cerita Cinta"
+                        script
                         {...sectionTitleProps}
                       />
                       <div
@@ -715,8 +870,13 @@ export default async function PublicInvitationPage(
                           borderColor: `color-mix(in srgb, ${colors.accent} 40%, transparent)`,
                         }}
                       >
-                        {stories.map((story) => (
-                          <div key={story.id} className="relative">
+                        {stories.map((story, index) => (
+                          <ScrollAnimate
+                            key={story.id}
+                            animation="fadeInRight"
+                            delay={index * 100}
+                            className="relative"
+                          >
                             <span
                               className="absolute top-1.5 -left-[36px] size-3 rounded-full"
                               style={{
@@ -734,7 +894,7 @@ export default async function PublicInvitationPage(
                             <p className="mt-1 text-sm leading-relaxed opacity-80">
                               {story.description}
                             </p>
-                          </div>
+                          </ScrollAnimate>
                         ))}
                       </div>
                     </section>
@@ -747,16 +907,19 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Momen kebahagiaan"
                         title="Galeri"
+                        script
                         {...sectionTitleProps}
                       />
-                      <GalleryViewer
-                        photos={flatGallery.map((photo) => ({
-                          id: photo.id,
-                          imageUrl: photo.imageUrl,
-                          caption: photo.caption,
-                        }))}
-                        frameStyle={frameStyle}
-                      />
+                      <ScrollAnimate animation="zoomIn" duration={0.9}>
+                        <GalleryViewer
+                          photos={flatGallery.map((photo) => ({
+                            id: photo.id,
+                            imageUrl: photo.imageUrl,
+                            caption: photo.caption,
+                          }))}
+                          frameStyle={frameStyle}
+                        />
+                      </ScrollAnimate>
                     </section>
                   </Reveal>
                 ) : null}
@@ -773,6 +936,7 @@ export default async function PublicInvitationPage(
                             <SectionTitle
                               kicker="Album"
                               title={album.name}
+                              script
                               {...sectionTitleProps}
                             />
                             {album.description ? (
@@ -780,15 +944,17 @@ export default async function PublicInvitationPage(
                                 {album.description}
                               </p>
                             ) : null}
-                            <GalleryViewer
-                              layout="album"
-                              photos={photos.map((photo) => ({
-                                id: photo.id,
-                                imageUrl: photo.imageUrl,
-                                caption: photo.caption,
-                              }))}
-                              frameStyle={frameStyle}
-                            />
+                            <ScrollAnimate animation="zoomIn" duration={0.9}>
+                              <GalleryViewer
+                                layout="album"
+                                photos={photos.map((photo) => ({
+                                  id: photo.id,
+                                  imageUrl: photo.imageUrl,
+                                  caption: photo.caption,
+                                }))}
+                                frameStyle={frameStyle}
+                              />
+                            </ScrollAnimate>
                           </section>
                         </Reveal>
                       );
@@ -801,12 +967,15 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Tanda kasih"
                         title="Kirim Hadiah"
+                        script
                         {...sectionTitleProps}
                       />
                       <div className="grid gap-5 sm:grid-cols-2">
-                        {gifts.map((gift) => (
-                          <div
+                        {gifts.map((gift, index) => (
+                          <ScrollAnimate
                             key={gift.id}
+                            animation="fadeInUp"
+                            delay={index * 110}
                             className="inv-plate-soft card-lift p-5"
                           >
                             <span
@@ -841,7 +1010,7 @@ export default async function PublicInvitationPage(
                                 a.n. {gift.accountName}
                               </p>
                             ) : null}
-                          </div>
+                          </ScrollAnimate>
                         ))}
                       </div>
                     </section>
@@ -855,10 +1024,36 @@ export default async function PublicInvitationPage(
             {invitation.closing ? (
               <Reveal>
                 <section className="inv-plate p-7 text-center sm:p-8">
-                  <OrnamentDivider motif={motifKey} color={colors.accent} />
-                  <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed opacity-80">
-                    {invitation.closing}
-                  </p>
+                  {config.fontScript ? (
+                    <>
+                      <OrnamentDivider motif={motifKey} color={colors.accent} />
+                      <p
+                        className="mt-2 text-4xl leading-none sm:text-5xl"
+                        style={{
+                          fontFamily: `'${config.fontScript}', cursive`,
+                          color: "var(--tpl-text)",
+                        }}
+                      >
+                        Terima Kasih
+                      </p>
+                      <p className="mt-4 mx-auto max-w-2xl text-sm leading-relaxed opacity-80">
+                        {invitation.closing}
+                      </p>
+                      <p
+                        className="mt-6 font-display text-2xl"
+                        style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+                      >
+                        {coupleTitle}
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <OrnamentDivider motif={motifKey} color={colors.accent} />
+                      <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed opacity-80">
+                        {invitation.closing}
+                      </p>
+                    </>
+                  )}
                 </section>
               </Reveal>
             ) : null}

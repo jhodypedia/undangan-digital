@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "animate.css";
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
@@ -282,6 +283,20 @@
 @keyframes uk-curtain-right {
   to {
     transform: translateX(101%);
+  }
+}
+
+@keyframes uk-cover-lift {
+  0% {
+    transform: translate(-50%, 0);
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -104%);
+    opacity: 0;
   }
 }
 
@@ -666,6 +681,9 @@
   }
   .inv-curtain-right {
     animation: uk-curtain-right 1.1s cubic-bezier(0.7, 0, 0.3, 1) forwards;
+  }
+  .inv-cover-lift {
+    animation: uk-cover-lift 1.5s cubic-bezier(0.76, 0, 0.24, 1) forwards;
   }
   .inv-zoom-out {
     animation: uk-zoom-out 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -1130,6 +1148,77 @@
 
   .inv-layout-floral .inv-plate {
     border-radius: 2.25rem;
+  }
+
+  /* Art Jawa Hitam: ceremonial, full-bleed sections and a light gallery. */
+  .inv-ceremonial .inv-plate {
+    border-width: 1px 0;
+    border-color: color-mix(
+      in srgb,
+      var(--tpl-accent, #c9a24b) 30%,
+      transparent
+    );
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .inv-ceremonial .inv-plate::before,
+  .inv-ceremonial .inv-plate::after {
+    display: none;
+  }
+  .inv-ceremonial .inv-plate-soft {
+    border-radius: 0.35rem;
+    border-color: color-mix(
+      in srgb,
+      var(--tpl-accent, #c9a24b) 24%,
+      transparent
+    );
+    background: color-mix(
+      in srgb,
+      var(--tpl-surface, #ffffff) 72%,
+      transparent
+    );
+    backdrop-filter: none;
+  }
+  .inv-ceremonial #countdown .font-display {
+    font-family: var(--tpl-font-accent, "Cormorant Garamond"), serif;
+    font-weight: 500;
+  }
+  .inv-ceremonial #events .inv-plate-soft {
+    background: #f3ecdf;
+    color: #17130c;
+    border-color: rgba(23, 19, 12, 0.22);
+  }
+  .inv-ceremonial #events .inv-plate-soft .font-display {
+    font-family: var(--tpl-font-accent, "Cormorant Garamond"), serif;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .inv-ceremonial #events iframe {
+    border-color: rgba(23, 19, 12, 0.18) !important;
+  }
+  .inv-ceremonial #gallery {
+    background: #f3ecdf;
+    color: #17130c;
+    margin-inline: -1rem;
+    padding-inline: 1.5rem;
+    border-width: 1px 0;
+    border-color: rgba(23, 19, 12, 0.22);
+    border-radius: 0;
+  }
+  .inv-ceremonial #gallery h2 {
+    color: #17130c !important;
+  }
+  .inv-ceremonial #gallery .inv-photo-frame {
+    background: #fffdf8;
+    border-color: rgba(23, 19, 12, 0.2);
+  }
+  @media (min-width: 640px) {
+    .inv-ceremonial #gallery {
+      margin-inline: -1.25rem;
+      padding-inline: 1.75rem;
+    }
   }
 }
 

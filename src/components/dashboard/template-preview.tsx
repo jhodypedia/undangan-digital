@@ -175,6 +175,7 @@ export function TemplatePreview({
         : undefined;
   const modern = config.layout === "modern";
   const minimal = config.layout === "minimal";
+  const ceremonial = ornamentKey === "gunungan";
   const ornate = ["classic", "royal", "floral", "javanese"].includes(
     config.layout,
   );
@@ -217,11 +218,18 @@ export function TemplatePreview({
             AA
           </span>
         ) : null}
-        <MiniPhoto
-          frameStyle={config.frameStyle}
-          accent={colors.accent}
-          monogram="AA"
-        />
+        {ceremonial ? (
+          <GununganOrnament
+            color={`${colors.accent}d9`}
+            className="h-16 w-11"
+          />
+        ) : (
+          <MiniPhoto
+            frameStyle={config.frameStyle}
+            accent={colors.accent}
+            monogram="AA"
+          />
+        )}
         <Names
           color="#ffffff"
           accent={colors.accent}
@@ -231,8 +239,19 @@ export function TemplatePreview({
         <span className="mt-2 text-[8px] text-white/80">12 Des 2026</span>
       </div>
       <span
-        className="mx-auto mb-4 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
-        style={{ background: colors.accent, color: colors.primary }}
+        className={cn(
+          "mx-auto mb-4 inline-flex items-center gap-1 px-3 py-1 text-[9px] font-medium",
+          ceremonial ? "rounded-none border-y-2" : "rounded-full",
+        )}
+        style={
+          ceremonial
+            ? {
+                background: "transparent",
+                color: colors.accent,
+                borderColor: colors.accent,
+              }
+            : { background: colors.accent, color: colors.primary }
+        }
       >
         <Music2 className="size-2.5" /> Buka Undangan
       </span>
@@ -337,12 +356,19 @@ export function TemplatePreview({
               >
                 Undangan Pernikahan
               </p>
-              <MiniPhoto
-                frameStyle={config.frameStyle}
-                accent={colors.accent}
-                monogram="AA"
-                className="mt-3"
-              />
+              {ceremonial ? (
+                <GununganOrnament
+                  color={`${colors.accent}d9`}
+                  className="mt-3 h-16 w-11"
+                />
+              ) : (
+                <MiniPhoto
+                  frameStyle={config.frameStyle}
+                  accent={colors.accent}
+                  monogram="AA"
+                  className="mt-3"
+                />
+              )}
               <Names
                 color={colors.text}
                 accent={colors.accent}
@@ -351,8 +377,19 @@ export function TemplatePreview({
               />
               <span className="mt-1 text-[8px] opacity-70">12 Des 2026</span>
               <span
-                className="mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
-                style={{ background: colors.accent, color: colors.primary }}
+                className={cn(
+                  "mt-3 inline-flex items-center gap-1 px-3 py-1 text-[9px] font-medium",
+                  ceremonial ? "rounded-none border-y-2" : "rounded-full",
+                )}
+                style={
+                  ceremonial
+                    ? {
+                        background: "transparent",
+                        color: colors.accent,
+                        borderColor: colors.accent,
+                      }
+                    : { background: colors.accent, color: colors.primary }
+                }
               >
                 <Music2 className="size-2.5" /> Buka Undangan
               </span>
@@ -362,7 +399,9 @@ export function TemplatePreview({
           <div
             className="relative flex h-64 flex-col justify-between py-4"
             style={{
-              background: `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primary}dd 60%, ${colors.primary} 100%)`,
+              background: ceremonial
+                ? `radial-gradient(120% 90% at 50% 8%, #24180f 0%, ${colors.primary} 48%, #070605 100%), radial-gradient(55% 35% at 50% 105%, #5f160c 0%, transparent 72%)`
+                : `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primary}dd 60%, ${colors.primary} 100%)`,
             }}
           >
             {(config.layout === "javanese" ||
