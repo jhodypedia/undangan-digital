@@ -1210,6 +1210,18 @@
   .inv-ceremonial #gallery h2 {
     color: #17130c !important;
   }
+  .inv-ceremonial #gallery .inv-kicker {
+    color: #5f160c !important;
+  }
+  .inv-ceremonial #gallery .inv-gallery-hint {
+    color: #17130c !important;
+  }
+  .inv-ceremonial #gallery .inv-gallery-fade-left {
+    background-image: linear-gradient(to right, #f3ecdf, transparent);
+  }
+  .inv-ceremonial #gallery .inv-gallery-fade-right {
+    background-image: linear-gradient(to left, #f3ecdf, transparent);
+  }
   .inv-ceremonial #gallery .inv-photo-frame {
     background: #fffdf8;
     border-color: rgba(23, 19, 12, 0.2);

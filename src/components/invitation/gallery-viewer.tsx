@@ -69,11 +69,11 @@ export function GalleryViewer({
       <div className="relative -mx-2">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[color:var(--tpl-surface)] to-transparent"
+          className="inv-gallery-fade inv-gallery-fade-left pointer-events-none absolute inset-y-0 left-0 z-10 w-10 bg-gradient-to-r from-[color:var(--tpl-surface)] to-transparent"
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[color:var(--tpl-surface)] to-transparent"
+          className="inv-gallery-fade inv-gallery-fade-right pointer-events-none absolute inset-y-0 right-0 z-10 w-10 bg-gradient-to-l from-[color:var(--tpl-surface)] to-transparent"
         />
         <div className="flex gap-3 overflow-x-auto px-2 pb-2 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {photos.map((photo, position) => (
@@ -143,7 +143,7 @@ export function GalleryViewer({
         </div>
       </div>
       <p
-        className="mt-3 flex items-center justify-center gap-1.5 text-[11px]"
+        className="inv-gallery-hint mt-3 flex items-center justify-center gap-1.5 text-[11px]"
         style={{ color: "var(--tpl-text)", opacity: 0.55 }}
       >
         <span className="inline-block animate-pulse">→</span> Geser untuk melihat lebih banyak foto

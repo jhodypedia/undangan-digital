@@ -84,8 +84,8 @@ function SectionTitle({
         <span
           className={
             ceremonial
-              ? "text-xs tracking-[0.2em] normal-case"
-              : "text-[11px] uppercase tracking-[0.35em]"
+              ? "inv-kicker text-xs tracking-[0.2em] normal-case"
+              : "inv-kicker text-[11px] uppercase tracking-[0.35em]"
           }
           style={{
             color: "var(--tpl-accent)",
