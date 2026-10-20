@@ -61,7 +61,7 @@ export function SectionNav({
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-3">
       <div
-        className="flex max-w-full items-center gap-1 overflow-x-auto rounded-full border p-1.5 shadow-xl backdrop-blur"
+        className="flex max-w-[calc(100vw-1.5rem)] items-center gap-1 overflow-x-auto rounded-full border p-1.5 shadow-xl backdrop-blur sm:max-w-[460px]"
         style={{
           background: "color-mix(in srgb, var(--tpl-surface) 88%, transparent)",
           borderColor: "color-mix(in srgb, var(--tpl-accent) 35%, transparent)",

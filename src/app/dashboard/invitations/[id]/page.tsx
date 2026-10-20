@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 
 import { getEffectiveRole, requireUser } from "@/lib/auth";
 import { getAccountLimits } from "@/lib/limits";
-import { getInvitationDetail } from "@/lib/queries";
+import { getInvitationDetail, getActiveTemplates } from "@/lib/queries";
 import { SITE_SETTINGS_KEYS } from "@/lib/constants";
 import { getSettings } from "@/lib/settings";
 
@@ -19,14 +19,17 @@ export default async function InvitationEditPage(
 ) {
   const user = await requireUser();
   const { id } = await props.params;
-  const detail = await getInvitationDetail(Number(id), user.id);
-  if (!detail) notFound();
 
   const limits = await getAccountLimits(user);
   const settings = await getSettings();
   const maxMb = Number(settings[SITE_SETTINGS_KEYS.uploadMaxMb] ?? "5") || 5;
   const role = getEffectiveRole(user);
   const isPremium = role === "premium" || role === "admin";
+  const [detail, availableTemplates] = await Promise.all([
+    getInvitationDetail(Number(id), user.id),
+    getActiveTemplates(),
+  ]);
+  if (!detail) notFound();
   const { invitation, events, stories, galleries, gifts, albums } = detail;
 
   return (
@@ -59,6 +62,7 @@ export default async function InvitationEditPage(
 
       <InvitationWizard
         detail={{ invitation, events, stories, galleries, gifts, albums }}
+        templates={availableTemplates}
         maxMb={maxMb}
         isPremium={isPremium}
         planName={limits.planName}

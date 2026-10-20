@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import {
   applyInvitationLookAction,
+  applyTemplateAction,
   clearInvitationLookAction,
   generateBackgroundAction,
   previewInvitationLookAction,
@@ -27,8 +28,9 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { Invitation } from "@/db/schema";
+import type { Invitation, Template } from "@/db/schema";
 import type { GeneratedTemplate } from "@/lib/ai";
+import { normalizeTemplateConfig } from "@/lib/template-config";
 
 const BG_PRESETS = [
   "Taman bunga lembut kabur, nuansa pastel, cahaya pagi.",
@@ -46,11 +48,13 @@ const LOOK_PRESETS = [
 
 export function DesignManager({
   invitation,
+  templates,
   maxMb = 5,
   isPremium,
   planName,
 }: {
   invitation: Invitation;
+  templates: Template[];
   maxMb?: number;
   isPremium: boolean;
   planName: string;
@@ -61,6 +65,13 @@ export function DesignManager({
   );
   const [overlay, setOverlay] = useState(invitation.backgroundOverlay ?? 40);
   const [blur, setBlur] = useState(invitation.backgroundBlur ?? 0);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<number | null>(
+    invitation.templateId ?? templates[0]?.id ?? null,
+  );
+  const [applyingTemplate, startApplyTemplate] = useTransition();
+  const selectedTemplate =
+    templates.find((item) => item.id === selectedTemplateId) ?? null;
+  const selectedConfig = normalizeTemplateConfig(selectedTemplate?.config);
 
   const [bgPrompt, setBgPrompt] = useState("");
   const [generatingBg, startGenBg] = useTransition();
@@ -149,9 +160,129 @@ export function DesignManager({
     });
   };
 
+  const applyTemplate = () => {
+    if (!selectedTemplate) return;
+    startApplyTemplate(async () => {
+      const result = await applyTemplateAction(
+        invitation.id,
+        selectedTemplate.id,
+      );
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success(result.success ?? "Template diterapkan.");
+      setHasCustomLook(false);
+      router.refresh();
+    });
+  };
+
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
       <div className="space-y-6">
+        <Card className="shadow-none">
+          <CardHeader>
+            <CardTitle className="font-display text-lg">
+              Template undangan
+            </CardTitle>
+            <CardDescription>
+              Pilih tema, lalu lihat pratinjau asli sebelum menerapkannya.
+              Template premium terkunci untuk paket {planName}.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-[1fr_240px]">
+            <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
+              {templates.map((template) => {
+                const config = normalizeTemplateConfig(template.config);
+                const locked = template.isPremium && !isPremium;
+                const active = template.id === selectedTemplateId;
+                return (
+                  <button
+                    key={template.id}
+                    type="button"
+                    aria-pressed={active}
+                    disabled={locked}
+                    onClick={() => setSelectedTemplateId(template.id)}
+                    className={`flex w-full items-center gap-3 rounded-xl border p-2.5 text-left transition-colors ${
+                      active
+                        ? "border-[var(--primary)] bg-muted/60"
+                        : "hover:bg-muted/40"
+                    } ${locked ? "cursor-not-allowed opacity-55" : ""}`}
+                  >
+                    <span
+                      aria-hidden
+                      className="relative grid size-10 shrink-0 place-items-center overflow-hidden rounded-lg border"
+                      style={{
+                        background: config.colors.background,
+                        borderColor: config.colors.primary,
+                      }}
+                    >
+                      <span
+                        className="absolute inset-x-0 top-0 h-1/2"
+                        style={{ background: config.colors.primary }}
+                      />
+                      <span
+                        className="relative size-3 rounded-full border"
+                        style={{
+                          background: config.colors.accent,
+                          borderColor: config.colors.surface,
+                        }}
+                      />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">
+                        {template.name}
+                      </span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {config.layout} · {config.coverStyle} ·{" "}
+                        {config.frameStyle}
+                      </span>
+                    </span>
+                    {template.isPremium ? (
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] text-muted-foreground">
+                        <Lock className="size-3" /> Premium
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
+              {templates.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Belum ada template aktif.
+                </p>
+              ) : null}
+            </div>
+
+            <div className="space-y-3">
+              <div className="rounded-2xl border bg-muted/30 p-3">
+                {selectedConfig ? (
+                  <TemplatePreview config={selectedConfig} />
+                ) : (
+                  <p className="grid min-h-56 place-items-center text-center text-xs text-muted-foreground">
+                    Pilih template untuk melihat pratinjau.
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                className="w-full"
+                onClick={applyTemplate}
+                disabled={
+                  !selectedTemplate ||
+                  applyingTemplate ||
+                  (selectedTemplate.id === invitation.templateId &&
+                    !hasCustomLook)
+                }
+              >
+                {applyingTemplate ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : null}
+                Terapkan template
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-none">
           <CardHeader>
             <CardTitle className="font-display text-lg">

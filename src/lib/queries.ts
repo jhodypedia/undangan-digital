@@ -109,6 +109,14 @@ export async function getInvitationForUser(id: number, userId: number) {
   return row ?? null;
 }
 
+export async function getActiveTemplates() {
+  return db
+    .select()
+    .from(templates)
+    .where(eq(templates.isActive, true))
+    .orderBy(templates.sortOrder, templates.id);
+}
+
 export async function getInvitationDetail(id: number, userId: number) {
   const invitation = await getInvitationForUser(id, userId);
   if (!invitation) return null;

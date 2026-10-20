@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
-import { CalendarDays, Gift, Heart, MapPin, Quote, Send } from "lucide-react";
+import { CalendarDays, Gift, Heart, MapPin, Quote } from "lucide-react";
 
 import { CopyButton } from "@/components/invitation/copy-button";
 import { Countdown } from "@/components/invitation/countdown";
@@ -8,6 +8,7 @@ import { CustomInvitation } from "@/components/invitation/custom-invitation";
 import { GalleryViewer } from "@/components/invitation/gallery-viewer";
 import { InvitationScreen } from "@/components/invitation/invitation-screen";
 import { Parallax } from "@/components/invitation/parallax";
+import { OrnamentDivider } from "@/components/invitation/ornaments";
 import { Reveal } from "@/components/invitation/reveal";
 import { RsvpForm } from "@/components/invitation/rsvp-form";
 import { WishForm } from "@/components/invitation/wish-form";
@@ -28,19 +29,25 @@ import {
   mapsQuery,
   resolveLatLng,
 } from "@/lib/maps";
-import { normalizeTemplateConfig } from "@/lib/template-config";
+import { normalizeTemplateConfig, resolveOrnamentKey } from "@/lib/template-config";
 
 function SectionTitle({
   kicker,
   title,
   fontDisplay,
+  layout = "classic",
+  ornamentKey = "daun-emas",
 }: {
   kicker?: string;
   title: string;
   fontDisplay?: string;
+  layout?: string;
+  ornamentKey?: string;
 }) {
+  const isModern = layout === "modern";
+  const isMinimal = layout === "minimal";
   return (
-    <div className="inv-section-title text-center">
+    <div className={isModern ? "text-left" : "text-center"}>
       {kicker ? (
         <span
           className="text-[11px] uppercase tracking-[0.35em]"
@@ -49,15 +56,36 @@ function SectionTitle({
           {kicker}
         </span>
       ) : null}
-      <span aria-hidden className="inv-ornament py-1">
+      {isMinimal ? (
         <span
-          className="size-1.5 rotate-45 rounded-[1px]"
+          aria-hidden
+          className="my-3 block h-px w-12 opacity-40"
           style={{ background: "var(--tpl-accent)" }}
         />
-      </span>
+      ) : isModern ? (
+        <span
+          aria-hidden
+          className="my-3 block h-0.5 w-10"
+          style={{ background: "var(--tpl-accent)" }}
+        />
+      ) : (
+        <OrnamentDivider
+          motif={ornamentKey}
+          color="var(--tpl-accent)"
+          className="my-2"
+        />
+      )}
       <h2
-        className="inv-title-shine font-display text-2xl sm:text-3xl"
-        style={{ fontFamily: `'${fontDisplay}', serif` }}
+        className={
+          isMinimal
+            ? "font-display text-base uppercase tracking-[0.3em]"
+            : isModern
+              ? "font-body text-2xl font-semibold tracking-tight sm:text-3xl"
+              : "inv-title-shine font-display text-2xl sm:text-3xl"
+        }
+        style={
+          isModern ? undefined : { fontFamily: `'${fontDisplay}', serif` }
+        }
       >
         {title}
       </h2>
@@ -91,6 +119,10 @@ export default async function PublicInvitationPage(
   const config = normalizeTemplateConfig(
     invitation.customConfig ?? template?.config,
   );
+  const layout = config.layout;
+  const coverStyle = config.coverStyle;
+  const frameStyle = config.frameStyle;
+  const motifKey = resolveOrnamentKey(config.ornament, config.motif);
   const colors = {
     ...config.colors,
     primary: invitation.themeColor || config.colors.primary,
@@ -238,6 +270,17 @@ export default async function PublicInvitationPage(
         .map(({ id, label }) => ({ id, label }));
 
   const plate = "inv-plate p-6 sm:p-7";
+  const coupleShape =
+    frameStyle === "square"
+      ? "rounded-none"
+      : frameStyle === "arch"
+        ? "rounded-t-[999px] rounded-b-2xl"
+        : "rounded-[2rem]";
+  const sectionTitleProps = {
+    fontDisplay: config.fontDisplay,
+    layout,
+    ornamentKey: motifKey,
+  };
 
   const interactiveSections = (
     <>
@@ -247,7 +290,7 @@ export default async function PublicInvitationPage(
             <SectionTitle
               kicker="Mohon konfirmasi"
               title="Konfirmasi Kehadiran"
-              fontDisplay={config.fontDisplay}
+              {...sectionTitleProps}
             />
             <div className={plate}>
               <RsvpForm
@@ -266,7 +309,7 @@ export default async function PublicInvitationPage(
             <SectionTitle
               kicker="Doa & harapan"
               title="Ucapan"
-              fontDisplay={config.fontDisplay}
+              {...sectionTitleProps}
             />
             <div className={plate}>
               <WishForm
@@ -331,6 +374,10 @@ export default async function PublicInvitationPage(
           watermark={showWatermark}
           watermarkText={settings[SITE_SETTINGS_KEYS.watermarkText] || brand}
           navItems={navItems}
+          layout={layout}
+          coverStyle={coverStyle}
+          frameStyle={frameStyle}
+          motifKey={motifKey}
         >
           <div className="space-y-14">
             {hasCustom ? (
@@ -354,15 +401,26 @@ export default async function PublicInvitationPage(
                         “{invitation.quote}”
                       </p>
                       {invitation.quoteSource ? (
-                        <span className="inv-ornament mt-5 block">
+                        <>
+                          <OrnamentDivider
+                            motif={motifKey}
+                            color={colors.accent}
+                            className="mt-5"
+                          />
                           <span
-                            className="text-xs tracking-[0.3em] uppercase"
+                            className="mt-3 block text-xs tracking-[0.3em] uppercase"
                             style={{ color: colors.accent }}
                           >
                             {invitation.quoteSource}
                           </span>
-                        </span>
-                      ) : null}
+                        </>
+                      ) : (
+                        <OrnamentDivider
+                          motif={motifKey}
+                          color={colors.accent}
+                          className="mt-5"
+                        />
+                      )}
                     </section>
                   </Reveal>
                 ) : null}
@@ -373,7 +431,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Dengan memohon rahmat Allah"
                         title="Mempelai"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       {invitation.greeting ? (
                         <p className="mx-auto max-w-xl text-sm leading-relaxed opacity-80">
@@ -415,7 +473,7 @@ export default async function PublicInvitationPage(
                                         width={260}
                                         height={340}
                                         unoptimized
-                                        className="inv-arch card-lift size-40 object-cover sm:size-44"
+                                        className={`${coupleShape} card-lift size-40 object-cover sm:size-44`}
                                       />
                                     ) : index === 1 && invitation.groomPhoto ? (
                                       <Image
@@ -424,11 +482,11 @@ export default async function PublicInvitationPage(
                                         width={260}
                                         height={340}
                                         unoptimized
-                                        className="inv-arch card-lift size-40 object-cover sm:size-44"
+                                        className={`${coupleShape} card-lift size-40 object-cover sm:size-44`}
                                       />
                                     ) : (
                                       <div
-                                        className="inv-arch grid size-40 place-items-center sm:size-44"
+                                        className={`${coupleShape} grid size-40 place-items-center sm:size-44`}
                                         style={{
                                           background: `color-mix(in srgb, ${colors.accent} 18%, var(--tpl-surface))`,
                                         }}
@@ -501,7 +559,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Menuju hari bahagia"
                         title="Hitung Hari"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       <Countdown target={invitation.eventDate.toISOString()} />
                     </section>
@@ -514,7 +572,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Rangkaian acara"
                         title="Waktu & Tempat"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       <div className="grid gap-5 sm:grid-cols-2">
                         {events.map((event) => {
@@ -649,7 +707,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Perjalanan kami"
                         title="Cerita Cinta"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       <div
                         className="relative ml-2 space-y-8 border-l pl-7"
@@ -689,7 +747,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Momen kebahagiaan"
                         title="Galeri"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       <GalleryViewer
                         photos={flatGallery.map((photo) => ({
@@ -697,6 +755,7 @@ export default async function PublicInvitationPage(
                           imageUrl: photo.imageUrl,
                           caption: photo.caption,
                         }))}
+                        frameStyle={frameStyle}
                       />
                     </section>
                   </Reveal>
@@ -714,7 +773,7 @@ export default async function PublicInvitationPage(
                             <SectionTitle
                               kicker="Album"
                               title={album.name}
-                              fontDisplay={config.fontDisplay}
+                              {...sectionTitleProps}
                             />
                             {album.description ? (
                               <p className="-mt-3 text-center text-sm opacity-70">
@@ -728,6 +787,7 @@ export default async function PublicInvitationPage(
                                 imageUrl: photo.imageUrl,
                                 caption: photo.caption,
                               }))}
+                              frameStyle={frameStyle}
                             />
                           </section>
                         </Reveal>
@@ -741,7 +801,7 @@ export default async function PublicInvitationPage(
                       <SectionTitle
                         kicker="Tanda kasih"
                         title="Kirim Hadiah"
-                        fontDisplay={config.fontDisplay}
+                        {...sectionTitleProps}
                       />
                       <div className="grid gap-5 sm:grid-cols-2">
                         {gifts.map((gift) => (
@@ -795,9 +855,7 @@ export default async function PublicInvitationPage(
             {invitation.closing ? (
               <Reveal>
                 <section className="inv-plate p-7 text-center sm:p-8">
-                  <span className="inv-ornament">
-                    <Send className="size-5" style={{ color: colors.accent }} />
-                  </span>
+                  <OrnamentDivider motif={motifKey} color={colors.accent} />
                   <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed opacity-80">
                     {invitation.closing}
                   </p>

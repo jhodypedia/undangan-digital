@@ -22,6 +22,7 @@ import type {
   Gallery,
   Album,
   Gift,
+  Template,
 } from "@/db/schema";
 
 type Detail = {
@@ -35,12 +36,14 @@ type Detail = {
 
 export function InvitationWizard({
   detail,
+  templates,
   maxMb,
   isPremium,
   planName,
   maxGallery,
 }: {
   detail: Detail;
+  templates: Template[];
   maxMb: number;
   isPremium: boolean;
   planName: string;
@@ -126,6 +129,7 @@ export function InvitationWizard({
         {step === 3 ? (
           <DesignManager
             invitation={invitation}
+            templates={templates}
             maxMb={maxMb}
             isPremium={isPremium}
             planName={planName}

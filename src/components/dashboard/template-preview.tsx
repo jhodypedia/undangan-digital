@@ -3,10 +3,22 @@
 import { CalendarDays, Heart, MapPin, Music2, Quote } from "lucide-react";
 
 import {
+  CoverArch,
+  GununganOrnament,
+  MotifPattern,
+  MotifSilhouette,
+  OrnamentDivider,
+  OrnamentFrame,
+} from "@/components/invitation/ornaments";
+import {
   renderCustomTemplate,
   type CustomTemplateData,
 } from "@/lib/custom-template";
-import type { TemplateConfig } from "@/lib/template-config";
+import {
+  frameRadiusClass,
+  resolveOrnamentKey,
+  type TemplateConfig,
+} from "@/lib/template-config";
 import { cn } from "@/lib/utils";
 
 const SAMPLE_DATA: Omit<CustomTemplateData, "colors"> = {
@@ -52,6 +64,98 @@ const SECTION_LABELS: Record<string, string> = {
   wishes: "Ucapan",
 };
 
+function MiniPhoto({
+  frameStyle,
+  accent,
+  monogram,
+  className,
+}: {
+  frameStyle: TemplateConfig["frameStyle"];
+  accent: string;
+  monogram: string;
+  className?: string;
+}) {
+  const shape =
+    frameStyle === "square"
+      ? "rounded-none"
+      : frameStyle === "arch"
+        ? "rounded-t-[999px] rounded-b-md"
+        : "rounded-[0.9rem]";
+  const size = frameStyle === "arch" ? "h-16 w-12" : "size-12";
+  return (
+    <div className={cn("relative", size, className)}>
+      <div
+        className={cn(
+          "grid h-full w-full place-items-center overflow-hidden border-2",
+          shape,
+        )}
+        style={{
+          borderColor: accent,
+          background: `color-mix(in srgb, ${accent} 22%, transparent)`,
+        }}
+      >
+        <span className="font-display text-sm" style={{ color: accent }}>
+          {monogram}
+        </span>
+      </div>
+      {frameStyle === "arch" ? (
+        <CoverArch frameStyle="arch" color={accent} secondaryColor={accent} />
+      ) : null}
+    </div>
+  );
+}
+
+function Names({
+  color,
+  accent,
+  config,
+  className,
+}: {
+  color: string;
+  accent: string;
+  config: TemplateConfig;
+  className?: string;
+}) {
+  const modern = config.layout === "modern";
+  const minimal = config.layout === "minimal";
+  return (
+    <div
+      className={cn(
+        "flex flex-col",
+        modern ? "items-start text-left" : "items-center text-center",
+        className,
+      )}
+    >
+      <span
+        className="text-[7px] uppercase tracking-[0.35em]"
+        style={{ color: accent }}
+      >
+        The Wedding Of
+      </span>
+      <span
+        className={cn(
+          modern ? "font-body font-semibold tracking-tight" : "font-display",
+          minimal ? "text-xs uppercase tracking-[0.24em]" : "mt-1 text-lg",
+        )}
+        style={{ color, fontFamily: `'${config.fontDisplay}', serif` }}
+      >
+        Arya &amp; Aisyah
+      </span>
+      {minimal ? (
+        <span className="mt-1.5 h-px w-8" style={{ background: `${accent}88` }} />
+      ) : modern ? (
+        <span className="mt-1.5 h-0.5 w-7" style={{ background: accent }} />
+      ) : (
+        <OrnamentDivider
+          motif={resolveOrnamentKey(config.ornament, config.motif)}
+          color={accent}
+          className="mt-1.5 w-full max-w-[9rem] scale-90"
+        />
+      )}
+    </div>
+  );
+}
+
 export function TemplatePreview({
   config,
   className,
@@ -61,12 +165,19 @@ export function TemplatePreview({
 }) {
   if (!config?.colors) return null;
   const { colors } = config;
-  const frameClass =
+  const ornamentKey = resolveOrnamentKey(config.ornament, config.motif);
+  const shape = frameRadiusClass(config.frameStyle);
+  const frameRadius =
     config.frameStyle === "square"
-      ? "rounded-md"
+      ? 0
       : config.frameStyle === "arch"
-        ? "rounded-t-[999px] rounded-b-md"
-        : "rounded-xl";
+        ? "3rem 3rem 0.75rem 0.75rem"
+        : undefined;
+  const modern = config.layout === "modern";
+  const minimal = config.layout === "minimal";
+  const ornate = ["classic", "royal", "floral", "javanese"].includes(
+    config.layout,
+  );
 
   if (config.customHtml?.trim()) {
     const { html, css } = renderCustomTemplate(config, {
@@ -94,58 +205,271 @@ export function TemplatePreview({
     );
   }
 
+  const coverContent = (
+    <>
+      <div className="relative flex flex-1 flex-col items-center justify-center px-4 text-center">
+        {config.layout === "royal" ? (
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 grid place-items-center font-display text-6xl opacity-[0.07]"
+            style={{ color: colors.accent }}
+          >
+            AA
+          </span>
+        ) : null}
+        <MiniPhoto
+          frameStyle={config.frameStyle}
+          accent={colors.accent}
+          monogram="AA"
+        />
+        <Names
+          color="#ffffff"
+          accent={colors.accent}
+          config={config}
+          className="mt-3"
+        />
+        <span className="mt-2 text-[8px] text-white/80">12 Des 2026</span>
+      </div>
+      <span
+        className="mx-auto mb-4 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
+        style={{ background: colors.accent, color: colors.primary }}
+      >
+        <Music2 className="size-2.5" /> Buka Undangan
+      </span>
+    </>
+  );
+
   return (
     <div className={cn("space-y-3", className)}>
       <div
         className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[2rem] border-4 border-black/80 shadow-xl"
         style={{ background: colors.background, color: colors.text }}
       >
-        <div
-          className="relative h-56"
-          style={{
-            background: `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primary}dd 60%, ${colors.primary} 100%)`,
-          }}
-        >
-          <div className="absolute inset-3 rounded-[1.4rem] border" style={{ borderColor: `${colors.accent}66` }} />
-          <div className="relative flex h-full flex-col items-center justify-center px-4 text-center">
-            <span className="text-[8px] uppercase tracking-[0.35em]" style={{ color: colors.accent }}>
-              The Wedding Of
-            </span>
-            <span
-              className="mt-2 text-2xl text-white"
-              style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+        {config.coverStyle === "split" ? (
+          <div className="flex h-64 flex-col">
+            <div
+              className="relative h-28 shrink-0 overflow-hidden"
+              style={{
+                background: `radial-gradient(120% 100% at 50% 0%, ${colors.primary} 0%, color-mix(in srgb, ${colors.primary} 60%, #000 40%) 100%)`,
+              }}
             >
-              Arya &amp; Aisyah
-            </span>
-            <span className="mt-2 h-px w-10" style={{ background: colors.accent }} />
-            <span className="mt-2 text-[9px] text-white/80">Sabtu, 12 Des 2026</span>
-            <span
-              className="mt-4 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
-              style={{ background: colors.accent, color: colors.primary }}
+              {(config.layout === "javanese" ||
+                config.layout === "floral") && (
+                <MotifPattern
+                  motif={ornamentKey}
+                  color={colors.accent}
+                  opacity={0.18}
+                />
+              )}
+              <div className="absolute inset-0 bg-black/25" />
+              <p
+                className="relative pt-4 text-center text-[7px] uppercase tracking-[0.35em]"
+                style={{ color: colors.accent }}
+              >
+                Undangan Pernikahan
+              </p>
+            </div>
+            <div
+              className="relative flex flex-1 flex-col justify-center px-4 py-3"
+              style={{ background: colors.primary }}
             >
-              <Music2 className="size-2.5" /> Buka Undangan
-            </span>
+              {config.layout === "royal" ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-1.5 rounded border"
+                  style={{ borderColor: `${colors.accent}55` }}
+                />
+              ) : null}
+              <Names
+                color="#ffffff"
+                accent={colors.accent}
+                config={config}
+                className={modern ? "items-start" : "items-center"}
+              />
+              <span className="mt-2 text-[8px] text-white/80">
+                12 Desember 2026
+              </span>
+              <span
+                className="mt-3 inline-flex w-fit items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
+                style={{ background: colors.accent, color: colors.primary }}
+              >
+                <Music2 className="size-2.5" /> Buka Undangan
+              </span>
+            </div>
           </div>
-        </div>
+        ) : config.coverStyle === "framed" ? (
+          <div
+            className="relative flex h-64 items-center justify-center p-3"
+            style={{
+              background: `color-mix(in srgb, ${colors.background} 88%, ${colors.primary} 12%)`,
+            }}
+          >
+            <MotifPattern
+              motif={ornamentKey}
+              color={colors.accent}
+              opacity={0.16}
+            />
+            <div
+              className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden border-2 px-3 py-3"
+              style={{
+                borderColor: colors.accent,
+                background: `color-mix(in srgb, ${colors.surface} 92%, transparent)`,
+                borderRadius:
+                  config.frameStyle === "square"
+                    ? 4
+                    : config.frameStyle === "rounded"
+                      ? 20
+                      : 26,
+              }}
+            >
+              {ornamentKey === "gunungan" ? (
+                <GununganOrnament
+                  color={`${colors.accent}26`}
+                  className="pointer-events-none absolute inset-x-0 top-0 mx-auto h-40 w-24"
+                />
+              ) : null}
+              {ornate ? (
+                <OrnamentFrame color={`${colors.accent}cc`} size="size-6" />
+              ) : null}
+              <p
+                className="text-[7px] uppercase tracking-[0.35em]"
+                style={{ color: colors.accent }}
+              >
+                Undangan Pernikahan
+              </p>
+              <MiniPhoto
+                frameStyle={config.frameStyle}
+                accent={colors.accent}
+                monogram="AA"
+                className="mt-3"
+              />
+              <Names
+                color={colors.text}
+                accent={colors.accent}
+                config={config}
+                className="mt-3"
+              />
+              <span className="mt-1 text-[8px] opacity-70">12 Des 2026</span>
+              <span
+                className="mt-3 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
+                style={{ background: colors.accent, color: colors.primary }}
+              >
+                <Music2 className="size-2.5" /> Buka Undangan
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div
+            className="relative flex h-64 flex-col justify-between py-4"
+            style={{
+              background: `linear-gradient(180deg, ${colors.primary} 0%, ${colors.primary}dd 60%, ${colors.primary} 100%)`,
+            }}
+          >
+            {(config.layout === "javanese" ||
+              config.layout === "floral") && (
+              <MotifPattern
+                motif={ornamentKey}
+                color={colors.accent}
+                opacity={0.2}
+              />
+            )}
+            <div className="pointer-events-none absolute inset-0 bg-black/10" />
+            {minimal ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-3 border"
+                style={{ borderColor: `${colors.accent}44` }}
+              />
+            ) : modern ? (
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-y-4 left-3 w-0.5"
+                style={{ background: colors.accent }}
+              />
+            ) : (
+              <>
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-2 border"
+                  style={{ borderColor: `${colors.accent}55` }}
+                />
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-3 border"
+                  style={{ borderColor: `${colors.accent}22` }}
+                />
+                <OrnamentFrame
+                  color={`${colors.accent}cc`}
+                  className="inset-0"
+                  size="size-7"
+                />
+              </>
+            )}
+            {config.layout === "javanese" ? (
+              <MotifSilhouette
+                motif="siluet-joglo"
+                color={`${colors.accent}55`}
+                className="absolute right-3 bottom-4 h-8 w-8"
+              />
+            ) : null}
+            <p
+              className="relative text-center text-[7px] uppercase tracking-[0.35em]"
+              style={{ color: colors.accent }}
+            >
+              Undangan Pernikahan
+            </p>
+            {coverContent}
+          </div>
+        )}
 
         <div className="space-y-3 p-3">
           <div className="flex gap-2">
             {[0, 1].map((index) => (
-              <div key={index} className="flex-1 text-center">
+              <div
+                key={index}
+                className={cn(
+                  "flex-1",
+                  modern ? "text-left" : "text-center",
+                )}
+              >
                 <div
-                  className={`mx-auto size-12 ${frameClass}`}
-                  style={{ background: `color-mix(in srgb, ${colors.accent} 22%, ${colors.surface})` }}
+                  className={`mx-auto size-12 overflow-hidden ${shape}`}
+                  style={{
+                    background: `color-mix(in srgb, ${colors.accent} 22%, ${colors.surface})`,
+                    borderRadius: frameRadius,
+                  }}
                 />
-                <p className="mt-1 text-[9px]" style={{ fontFamily: `'${config.fontDisplay}', serif` }}>
+                <p
+                  className="mt-1 text-[9px]"
+                  style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+                >
                   {index === 0 ? "Aisyah" : "Arya"}
                 </p>
               </div>
             ))}
           </div>
 
+          <OrnamentDivider
+            motif={ornamentKey}
+            color={colors.accent}
+            className="scale-90"
+          />
+
           <div
-            className="flex items-center justify-between rounded-lg px-2 py-1.5 text-[8px]"
-            style={{ background: colors.surface, border: `1px solid color-mix(in srgb, ${colors.text} 12%, transparent)` }}
+            className={cn(
+              "flex items-center justify-between px-2 py-1.5 text-[8px]",
+              minimal ? "border-y" : "rounded-lg",
+            )}
+            style={{
+              background: minimal ? "transparent" : colors.surface,
+              border: minimal
+                ? `1px solid color-mix(in srgb, ${colors.text} 14%, transparent)`
+                : `1px solid color-mix(in srgb, ${colors.text} 12%, transparent)`,
+              borderTopWidth: minimal ? 1 : undefined,
+              borderBottomWidth: minimal ? 1 : undefined,
+              borderLeftWidth: minimal ? 0 : undefined,
+              borderRightWidth: minimal ? 0 : undefined,
+            }}
           >
             {["Hari", "Jam", "Menit"].map((item) => (
               <span key={item} className="flex flex-col items-center">
@@ -156,11 +480,22 @@ export function TemplatePreview({
           </div>
 
           <div
-            className="rounded-lg p-2 text-[8px]"
-            style={{ background: colors.surface, border: `1px solid color-mix(in srgb, ${colors.text} 12%, transparent)` }}
+            className={cn(
+              "p-2 text-[8px]",
+              minimal ? "border-y" : "rounded-lg",
+            )}
+            style={{
+              background: minimal ? "transparent" : colors.surface,
+              border: minimal
+                ? `1px solid color-mix(in srgb, ${colors.text} 14%, transparent)`
+                : `1px solid color-mix(in srgb, ${colors.text} 12%, transparent)`,
+              borderLeftWidth: minimal ? 0 : undefined,
+              borderRightWidth: minimal ? 0 : undefined,
+            }}
           >
             <p className="flex items-center gap-1 font-medium">
-              <MapPin className="size-2.5" style={{ color: colors.accent }} /> Akad Nikah
+              <MapPin className="size-2.5" style={{ color: colors.accent }} />{" "}
+              Akad Nikah
             </p>
             <p className="mt-0.5 flex items-center gap-1 opacity-70">
               <CalendarDays className="size-2.5" /> 12 Des 2026 · 09.00 WIB
@@ -171,8 +506,11 @@ export function TemplatePreview({
             {[0, 1, 2].map((index) => (
               <div
                 key={index}
-                className="aspect-square rounded-md"
-                style={{ background: `color-mix(in srgb, ${colors.primary} 25%, ${colors.surface})` }}
+                className={cn("aspect-square overflow-hidden", shape)}
+                style={{
+                  background: `color-mix(in srgb, ${colors.primary} 25%, ${colors.surface})`,
+                  borderRadius: frameRadius,
+                }}
               />
             ))}
           </div>
@@ -181,8 +519,10 @@ export function TemplatePreview({
 
       <div className="flex flex-wrap gap-1.5">
         <Chip color={colors.primary}>{config.layout}</Chip>
-        <Chip color={colors.accent}>{config.motif}</Chip>
-        <Chip color={colors.text}>{config.coverStyle} · {config.frameStyle}</Chip>
+        <Chip color={colors.accent}>
+          {config.coverStyle} · {config.frameStyle}
+        </Chip>
+        <Chip color={colors.text}>{ornamentKey}</Chip>
       </div>
 
       <div className="flex flex-wrap gap-1">

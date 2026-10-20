@@ -13,12 +13,23 @@ const AUTOPLAY_MS = 3800;
 export function GalleryViewer({
   photos,
   layout = "grid",
+  frameStyle = "rounded",
 }: {
   photos: Photo[];
   layout?: "grid" | "album";
+  frameStyle?: "rounded" | "square" | "arch";
 }) {
   const [index, setIndex] = useState<number | null>(null);
   const [playing, setPlaying] = useState(true);
+
+  const shape =
+    frameStyle === "square"
+      ? "rounded-none"
+      : frameStyle === "arch"
+        ? "rounded-t-[3rem] rounded-b-xl"
+        : "rounded-[1rem]";
+  const frameRadius =
+    frameStyle === "square" ? 0 : frameStyle === "arch" ? "3rem 3rem 1rem 1rem" : undefined;
 
   const active = index === null ? null : photos[index];
   const total = photos.length;
@@ -87,8 +98,9 @@ export function GalleryViewer({
               className={`inv-photo-frame inv-thumb inv-sweep group relative block ${
                 layout === "album" ? "w-full" : "aspect-square size-full"
               }`}
+              style={{ borderRadius: frameRadius }}
             >
-              <span className="relative block size-full overflow-hidden rounded-[1rem]">
+              <span className={`relative block size-full overflow-hidden ${shape}`}>
                 <Image
                   src={photo.imageUrl}
                   alt={photo.caption ?? "Foto"}
@@ -117,7 +129,7 @@ export function GalleryViewer({
                   </span>
                 ) : null}
                 <span
-                  className="pointer-events-none absolute inset-0 rounded-[1rem] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-500 group-hover:opacity-100"
                   style={{
                     boxShadow:
                       "0 0 0 2px color-mix(in srgb, var(--tpl-accent) 80%, transparent)",

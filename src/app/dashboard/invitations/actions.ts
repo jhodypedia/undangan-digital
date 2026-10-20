@@ -11,6 +11,7 @@ import {
   gifts,
   invitations,
   stories,
+  templates,
 } from "@/db/schema";
 import { getAccountLimits } from "@/lib/limits";
 import { isPremiumActive, requireUser } from "@/lib/auth";
@@ -505,6 +506,40 @@ export async function uploadImageAction(
 
 const clamp = (value: number, min: number, max: number) =>
   Math.min(max, Math.max(min, value));
+
+export async function applyTemplateAction(
+  invitationId: number,
+  templateId: number,
+): Promise<FormState> {
+  const user = await requireUser();
+  const owned = await ownedInvitation(invitationId, user.id);
+  if (!owned) return { error: "Undangan tidak ditemukan." };
+
+  const [template] = await db
+    .select()
+    .from(templates)
+    .where(and(eq(templates.id, templateId), eq(templates.isActive, true)))
+    .limit(1);
+  if (!template) return { error: "Template tidak tersedia." };
+
+  if (template.isPremium && !isPremiumActive(user)) {
+    return { error: "Template ini khusus pengguna premium." };
+  }
+
+  await db
+    .update(invitations)
+    .set({
+      templateId: template.id,
+      customConfig: null,
+      themeColor: template.primaryColor,
+      accentColor: template.accentColor,
+    })
+    .where(eq(invitations.id, invitationId));
+
+  revalidatePath(`/dashboard/invitations/${invitationId}`);
+  revalidatePath(`/u/${owned.slug}`);
+  return { success: `Template "${template.name}" diterapkan.` };
+}
 
 export async function updateInvitationDesign(
   _prev: FormState,

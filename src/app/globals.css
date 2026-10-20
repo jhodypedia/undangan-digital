@@ -1051,6 +1051,86 @@
     box-shadow: 0 22px 44px -34px
       color-mix(in srgb, var(--tpl-text, #0f1f18) 70%, transparent);
   }
+
+  /* Layout-specific refinements */
+  .inv-layout-minimal .inv-plate {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+  }
+  .inv-layout-minimal .inv-plate::before,
+  .inv-layout-minimal .inv-plate::after {
+    display: none;
+  }
+  .inv-layout-minimal .inv-plate-soft {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    backdrop-filter: none;
+  }
+  .inv-layout-minimal .inv-section-title::after {
+    display: none;
+  }
+
+  .inv-layout-modern .inv-plate {
+    border-radius: 0.9rem;
+    border-width: 1px;
+    box-shadow: none;
+    text-align: left;
+  }
+  .inv-layout-modern .inv-plate::before,
+  .inv-layout-modern .inv-plate::after {
+    display: none;
+  }
+  .inv-layout-modern .inv-plate-soft {
+    border-radius: 0.6rem;
+  }
+
+  .inv-layout-royal .inv-plate {
+    border-width: 2px;
+    border-radius: 2rem;
+    box-shadow:
+      0 0 0 4px
+        color-mix(in srgb, var(--tpl-accent, #c9a24b) 20%, transparent),
+      0 40px 80px -54px
+        color-mix(in srgb, var(--tpl-text, #0f1f18) 80%, transparent);
+  }
+  .inv-layout-royal .inv-plate::after {
+    inset: 6px;
+    border-width: 1.5px;
+  }
+
+  .inv-layout-javanese .inv-plate {
+    border-width: 2px;
+    background-image:
+      repeating-linear-gradient(
+        45deg,
+        transparent 0 12px,
+        color-mix(in srgb, var(--tpl-accent, #c9a24b) 6%, transparent) 12px
+          13px
+      ),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 82%, transparent),
+        color-mix(in srgb, var(--tpl-surface, #ffffff) 62%, transparent)
+      );
+  }
+  .inv-layout-javanese .inv-plate-soft {
+    background-image:
+      repeating-linear-gradient(
+        -45deg,
+        transparent 0 10px,
+        color-mix(in srgb, var(--tpl-accent, #c9a24b) 5%, transparent) 10px
+          11px
+      ),
+      color-mix(in srgb, var(--tpl-surface, #ffffff) 62%, transparent);
+  }
+
+  .inv-layout-floral .inv-plate {
+    border-radius: 2.25rem;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
