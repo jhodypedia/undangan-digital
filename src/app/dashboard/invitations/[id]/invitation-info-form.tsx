@@ -200,8 +200,10 @@ export function InvitationInfoForm({
         <div className="space-y-2">
           <Label>Foto latar sampul (background)</Label>
           <p className="text-xs text-muted-foreground">
-            Hanya untuk halaman sampul sebelum undangan dibuka. Untuk latar
-            setelah undangan dibuka, atur di tab <strong>Desain</strong>.
+            Hanya untuk halaman sampul sebelum undangan dibuka. Pada tema
+            dengan artwork, foto ini menjadi cadangan foto di dalam bingkai
+            bila foto pembuka kosong. Untuk latar setelah undangan dibuka,
+            atur di tab <strong>Desain</strong>.
           </p>
           <ImageUploader
             name="coverImage"

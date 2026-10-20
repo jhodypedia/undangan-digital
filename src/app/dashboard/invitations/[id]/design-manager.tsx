@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Eraser, Lock, Loader2, RefreshCw, Sparkles, Wand2 } from "lucide-react";
 import { toast } from "sonner";
@@ -33,6 +34,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Invitation, Template } from "@/db/schema";
 import type { GeneratedTemplate } from "@/lib/ai";
 import { normalizeTemplateConfig } from "@/lib/template-config";
+import { getTemplateArtwork } from "@/lib/template-artwork";
 
 const BG_PRESETS = [
   "Taman bunga lembut kabur, nuansa pastel, cahaya pagi.",
@@ -221,6 +223,7 @@ export function DesignManager({
             <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
               {templates.map((template) => {
                 const config = normalizeTemplateConfig(template.config);
+                const artwork = getTemplateArtwork(template.code);
                 const locked = template.isPremium && !isPremium;
                 const active = template.id === selectedTemplateId;
                 return (
@@ -244,17 +247,29 @@ export function DesignManager({
                         borderColor: config.colors.primary,
                       }}
                     >
-                      <span
-                        className="absolute inset-x-0 top-0 h-1/2"
-                        style={{ background: config.colors.primary }}
-                      />
-                      <span
-                        className="relative size-3 rounded-full border"
-                        style={{
-                          background: config.colors.accent,
-                          borderColor: config.colors.surface,
-                        }}
-                      />
+                      {artwork ? (
+                        <Image
+                          src={artwork.src}
+                          alt=""
+                          fill
+                          sizes="40px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <>
+                          <span
+                            className="absolute inset-x-0 top-0 h-1/2"
+                            style={{ background: config.colors.primary }}
+                          />
+                          <span
+                            className="relative size-3 rounded-full border"
+                            style={{
+                              background: config.colors.accent,
+                              borderColor: config.colors.surface,
+                            }}
+                          />
+                        </>
+                      )}
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">
@@ -283,7 +298,10 @@ export function DesignManager({
             <div className="space-y-3">
               <div className="rounded-2xl border bg-muted/30 p-3">
                 {selectedConfig ? (
-                  <TemplatePreview config={selectedConfig} />
+                  <TemplatePreview
+                    config={selectedConfig}
+                    artworkCode={selectedTemplate?.code}
+                  />
                 ) : (
                   <p className="grid min-h-56 place-items-center text-center text-xs text-muted-foreground">
                     Pilih template untuk melihat pratinjau.
@@ -562,15 +580,14 @@ export function DesignManager({
             overlay={overlay}
             blur={blur}
             colors={{
-              primary: invitation.themeColor || "#0b3d2e",
-              accent: invitation.accentColor || "#c9a24b",
-              background: invitation.backgroundImage ? "#0f172a" : "#f7f3ea",
-              surface: "#ffffff",
-              text: "#17241d",
+              primary: selectedConfig.colors.primary,
+              accent: selectedConfig.colors.accent,
+              background: selectedConfig.colors.background,
+              surface: selectedConfig.colors.surface,
+              text: selectedConfig.colors.text,
             }}
-            fontDisplay={
-              invitation.customConfig?.fontDisplay ?? "Playfair Display"
-            }
+            fontDisplay={selectedConfig.fontDisplay}
+            artworkCode={selectedTemplate?.code}
             showSections={false}
           />
         </div>

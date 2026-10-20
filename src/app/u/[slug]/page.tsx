@@ -453,6 +453,10 @@ export default async function PublicInvitationPage(
           coverStyle={coverStyle}
           frameStyle={frameStyle}
           motifKey={motifKey}
+          artworkCode={config.customHtml ? undefined : template?.code}
+          fontDisplay={config.fontDisplay}
+          fontScript={config.fontScript}
+          fontAccent={config.fontAccent}
         >
           <div className="space-y-14">
             {hasCustom ? (

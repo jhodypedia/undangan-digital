@@ -284,7 +284,7 @@ function TemplateFields({ template }: { template: Template }) {
         </div>
       </div>
       <div className="rounded-2xl border bg-muted/30 p-4">
-        <TemplatePreview config={previewConfig} />
+        <TemplatePreview config={previewConfig} artworkCode={template.code} />
       </div>
     </div>
   );

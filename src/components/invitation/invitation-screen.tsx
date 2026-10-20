@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { Heart, MailOpen, Music2, Play } from "lucide-react";
 
+import { ArtworkCover } from "@/components/invitation/artwork-cover";
 import {
   CoverArch,
   GununganOrnament,
@@ -21,6 +22,7 @@ import type {
   OrnamentKey,
   TemplateLayout,
 } from "@/lib/template-config";
+import { getTemplateArtwork } from "@/lib/template-artwork";
 import { cn } from "@/lib/utils";
 
 const PETALS = Array.from({ length: 12 }, (_, index) => ({
@@ -302,6 +304,10 @@ export function InvitationScreen({
   coverStyle = "full",
   frameStyle = "rounded",
   motifKey = "daun-emas",
+  artworkCode,
+  fontDisplay = "Playfair Display",
+  fontScript,
+  fontAccent,
   children,
 }: {
   slug: string;
@@ -327,6 +333,10 @@ export function InvitationScreen({
   coverStyle?: CoverStyle;
   frameStyle?: FrameStyle;
   motifKey?: OrnamentKey;
+  artworkCode?: string | null;
+  fontDisplay?: string;
+  fontScript?: string;
+  fontAccent?: string;
   children: React.ReactNode;
 }) {
   const [phase, setPhase] = useState<"cover" | "opening" | "open">("cover");
@@ -344,6 +354,7 @@ export function InvitationScreen({
     layout,
   );
   const ceremonial = motifKey === "gunungan";
+  const artworkMeta = getTemplateArtwork(artworkCode);
   const dividerKey: OrnamentKey =
     layout === "javanese" ? "parang" : motifKey;
 
@@ -1022,6 +1033,41 @@ export function InvitationScreen({
     </div>
   );
 
+  const artworkBottom = (
+    <>
+      {guestName ? (
+        <p className="pointer-events-auto max-w-[80vw] text-[10px] tracking-[0.24em] uppercase text-white/70">
+          Kepada
+          <span className="mt-1 block max-w-[80vw] truncate font-display text-base tracking-normal text-white normal-case">
+            {guestName}
+          </span>
+        </p>
+      ) : null}
+      <div className="pointer-events-auto">{openButton()}</div>
+      <p className="text-[11px] text-white/55">
+        {brand ?? "UndanganKita"}
+      </p>
+    </>
+  );
+
+  const artworkCover = artworkMeta ? (
+    <ArtworkCover
+      meta={artworkMeta}
+      title={title}
+      dateLabel={dateLabel}
+      coverPhoto={coverPhoto}
+      coverImage={coverImage}
+      primary={primary}
+      accent={accent}
+      fontDisplay={fontDisplay}
+      fontScript={fontScript}
+      fontAccent={fontAccent}
+      ceremonial={ceremonial}
+      openingClass={coverOpeningClass}
+      bottom={artworkBottom}
+    />
+  ) : null;
+
   return (
     <div
       className="relative isolate mx-auto min-h-svh w-full max-w-[480px]"
@@ -1129,6 +1175,22 @@ export function InvitationScreen({
                   }}
                 />
               </>
+            ) : artworkMeta ? (
+              <div className="absolute inset-y-0 left-1/2 w-full max-w-[480px] -translate-x-1/2 overflow-hidden">
+                <div
+                  className="absolute inset-0 bg-cover bg-center opacity-[0.13]"
+                  style={{
+                    backgroundImage: `url(${artworkMeta.src})`,
+                    backgroundPosition: "center top",
+                  }}
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    background: `linear-gradient(180deg, color-mix(in srgb, var(--tpl-background) 72%, transparent) 0%, color-mix(in srgb, var(--tpl-background) 86%, transparent) 42%, color-mix(in srgb, var(--tpl-background) 94%, transparent) 100%)`,
+                  }}
+                />
+              </div>
             ) : !isMinimal ? (
               <div
                 className="absolute inset-0"
@@ -1303,11 +1365,12 @@ export function InvitationScreen({
       ) : null}
 
       {phase === "cover" || (phase === "opening" && ceremonial)
-        ? coverStyle === "split"
-          ? coverSplit
-          : coverStyle === "framed"
-            ? coverFramed
-            : coverFull
+        ? (artworkCover ??
+          (coverStyle === "split"
+            ? coverSplit
+            : coverStyle === "framed"
+              ? coverFramed
+              : coverFull))
         : null}
 
       {phase === "opening" && !ceremonial ? (

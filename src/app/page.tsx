@@ -231,6 +231,7 @@ export default async function LandingPage() {
                     greeting="Dengan memohon rahmat Allah, kami mengundang Anda."
                     closing="Merupakan kebahagiaan bagi kami apabila Anda berkenan hadir."
                     coverPhoto="https://picsum.photos/seed/lvcover/400/400"
+                    artworkCode={previewTemplates[0]?.code}
                     colors={previewColors}
                     fontDisplay={previewFont}
                     events={[

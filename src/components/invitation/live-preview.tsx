@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { CalendarDays, Heart, MapPin, Quote, Send, Users } from "lucide-react";
 
+import { getTemplateArtwork } from "@/lib/template-artwork";
 import { cn } from "@/lib/utils";
 
 export type PreviewColors = {
@@ -45,6 +46,7 @@ export function LiveInvitationPreview({
   closing,
   coverPhoto,
   backgroundImage,
+  artworkCode,
   overlay = 40,
   blur = 0,
   colors,
@@ -64,6 +66,7 @@ export function LiveInvitationPreview({
   closing?: string;
   coverPhoto?: string;
   backgroundImage?: string;
+  artworkCode?: string | null;
   overlay?: number;
   blur?: number;
   colors: PreviewColors;
@@ -75,6 +78,7 @@ export function LiveInvitationPreview({
   className?: string;
 }) {
   const initial = coupleTitle.trim().charAt(0).toUpperCase() || "U";
+  const artworkMeta = getTemplateArtwork(artworkCode);
 
   return (
     <div
@@ -97,6 +101,24 @@ export function LiveInvitationPreview({
             filter: blur ? `blur(${blur}px)` : undefined,
           }}
         />
+      ) : artworkMeta ? (
+        <>
+          <div
+            className="inv-kenburns absolute -inset-8 bg-cover bg-center"
+            style={{
+              backgroundImage: `url(${artworkMeta.src})`,
+              backgroundPosition: "center 30%",
+              filter: blur ? `blur(${blur}px)` : undefined,
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.08) 42%, rgba(0,0,0,0.62) 100%)",
+            }}
+          />
+        </>
       ) : (
         <div
           className="absolute inset-0"

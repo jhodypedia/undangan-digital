@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { CalendarDays, Heart, MapPin, Music2, Quote } from "lucide-react";
 
 import {
@@ -14,6 +15,7 @@ import {
   renderCustomTemplate,
   type CustomTemplateData,
 } from "@/lib/custom-template";
+import { getTemplateArtwork, type ArtworkMeta } from "@/lib/template-artwork";
 import {
   frameRadiusClass,
   resolveOrnamentKey,
@@ -160,15 +162,69 @@ function Names({
   );
 }
 
+function ArtworkThumb({
+  meta,
+  config,
+  colors,
+}: {
+  meta: ArtworkMeta;
+  config: TemplateConfig;
+  colors: TemplateConfig["colors"];
+}) {
+  return (
+    <div className="relative h-64 overflow-hidden">
+      <Image
+        src={meta.src}
+        alt=""
+        fill
+        sizes="260px"
+        className="object-cover"
+        style={{ objectPosition: "center 32%" }}
+      />
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.08) 38%, rgba(0,0,0,0.82) 100%)",
+        }}
+      />
+      <div className="absolute inset-x-0 bottom-0 flex flex-col items-center px-4 pb-4 text-center">
+        <p
+          className="text-[7px] uppercase tracking-[0.35em]"
+          style={{ color: colors.accent }}
+        >
+          Undangan Pernikahan
+        </p>
+        <p
+          className="mt-1 max-w-full font-display text-lg leading-tight text-white"
+          style={{ fontFamily: `'${config.fontDisplay}', serif` }}
+        >
+          Arya &amp; Aisyah
+        </p>
+        <p className="mt-1 text-[8px] text-white/75">12 Desember 2026</p>
+        <span
+          className="mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[9px] font-medium"
+          style={{ background: colors.accent, color: colors.primary }}
+        >
+          <Music2 className="size-2.5" /> Buka Undangan
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function TemplatePreview({
   config,
+  artworkCode,
   className,
 }: {
   config: TemplateConfig;
+  artworkCode?: string | null;
   className?: string;
 }) {
   if (!config?.colors) return null;
   const { colors } = config;
+  const artworkMeta = getTemplateArtwork(artworkCode);
   const ornamentKey = resolveOrnamentKey(config.ornament, config.motif);
   const dividerKey = config.layout === "javanese" ? "parang" : ornamentKey;
   const fontStylesheet = templateFontStylesheet(config);
@@ -277,7 +333,9 @@ export function TemplatePreview({
         className="mx-auto w-full max-w-[260px] overflow-hidden rounded-[2rem] border-4 border-black/80 shadow-xl"
         style={{ background: colors.background, color: colors.text }}
       >
-        {config.coverStyle === "split" ? (
+        {artworkMeta ? (
+          <ArtworkThumb meta={artworkMeta} config={config} colors={colors} />
+        ) : config.coverStyle === "split" ? (
           <div className="flex h-64 flex-col">
             <div
               className="relative h-28 shrink-0 overflow-hidden"
